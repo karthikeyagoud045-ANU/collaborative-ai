@@ -1,80 +1,65 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
-import * as Y from "yjs";
-import { PendingAgentAction } from "@/lib/agent-tools";
+import { useEffect, useRef } from "react";
+import { showToast } from "@/hooks/useToast";
+import type * as Y from "yjs";
 
-/**
- * Custom hook that subscribes to pendingAgentActions Y.Map.
- * Returns the list of pending actions and approve/reject functions.
- */
-export function useAgentApprovals(
-  pendingAgentActions: Y.Map<unknown> | null
-) {
-  const [pendingActions, setPendingActions] = useState<PendingAgentAction[]>([]);
-  const mapRef = useRef<Y.Map<unknown> | null>(null);
+interface PendingAction {
+  id: string;
+  type: string;
+  target: string;
+  status: string;
+}
 
-  // Sync Yjs map to React state
+export function useAgentApprovals(ydoc: Y.Doc | null) {
+  const [pendingActions, setPendingActions] = useState<PendingAction[]>([]);
+  const actionsRef = useRef<Y.Map<unknown> | null>(null);
+
   useEffect(() => {
-    if (!pendingAgentActions) return;
+    if (!ydoc) return;
+    const actions = ydoc.getMap("pendingAgentActions");
+    actionsRef.current = actions;
 
-    mapRef.current = pendingAgentActions;
-
-    const syncActions = () => {
-      const actions: PendingAgentAction[] = [];
-      pendingAgentActions.forEach((value) => {
-        const map = value as Y.Map<string | number>;
-        const action: PendingAgentAction = {
-          id: (map.get("id") as string) || "",
-          type: (map.get("type") as "write_file" | "run_terminal") || "write_file",
-          target: (map.get("target") as string) || "",
-          originalContent: (map.get("originalContent") as string) || "",
-          proposedContent: (map.get("proposedContent") as string) || "",
-          status: (map.get("status") as "pending" | "approved" | "rejected") || "pending",
-          requestedBy: (map.get("requestedBy") as string) || "",
-          timestamp: (map.get("timestamp") as number) || 0,
-        };
+    const update = () => {
+      const pending: PendingAction[] = [];
+      actions.forEach((value, key) => {
+        const action = value as Record<string, unknown>;
         if (action.status === "pending") {
-          actions.push(action);
+          pending.push({
+            id: key,
+            type: action.type as string,
+            target: action.target as string,
+            status: action.status as string,
+          });
         }
       });
-      setPendingActions(actions);
+      setPendingActions(pending);
     };
 
-    syncActions();
-    pendingAgentActions.observe(syncActions);
+    update();
+    actions.observe(update);
+    return () => actions.unobserve(update);
+  }, [ydoc]);
 
-    return () => {
-      pendingAgentActions.unobserve(syncActions);
-    };
-  }, [pendingAgentActions]);
-
-  const approveAction = useCallback((actionId: string) => {
-    const map = mapRef.current;
-    if (!map) return;
-
-    const action = map.get(actionId) as Y.Map<string> | undefined;
+  const approveAction = (actionId: string) => {
+    if (!actionsRef.current) return;
+    const action = actionsRef.current.get(actionId) as Y.Map<string> | undefined;
     if (action) {
       action.set("status", "approved");
-      map.set(actionId, action);
+      showToast("Action approved", "success");
     }
-  }, []);
+  };
 
-  const rejectAction = useCallback((actionId: string) => {
-    const map = mapRef.current;
-    if (!map) return;
-
-    const action = map.get(actionId) as Y.Map<string> | undefined;
+  const rejectAction = (actionId: string) => {
+    if (!actionsRef.current) return;
+    const action = actionsRef.current.get(actionId) as Y.Map<string> | undefined;
     if (action) {
       action.set("status", "rejected");
-      map.set(actionId, action);
+      showToast("Action rejected", "warning");
     }
-
-    // Clean up after a short delay
-    setTimeout(() => {
-      map.delete(actionId);
-    }, 1000);
-  }, []);
+  };
 
   return { pendingActions, approveAction, rejectAction };
 }
+
+import { useState } from "react";

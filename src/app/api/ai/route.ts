@@ -83,6 +83,17 @@ export async function POST(req: NextRequest) {
       case "google":
         response = await callGoogle(apiKey, model, systemPrompt, userContent);
         break;
+      case "groq":
+        response = await callGroq(apiKey, model, systemPrompt, userContent);
+        break;
+      case "openrouter":
+        response = await callOpenRouter(apiKey, model, systemPrompt, userContent);
+        break;
+      case "nvidia":
+        response = await callNvidia(apiKey, model, systemPrompt, userContent);
+        break;
+      default:
+        throw new ValidationError("Unsupported provider", "provider");
     }
 
     if (!response.ok) {
@@ -125,7 +136,7 @@ export async function POST(req: NextRequest) {
             for (const line of lines) {
               if (!line.trim()) continue;
 
-              if (provider === "openai") {
+              if (provider === "openai" || provider === "groq" || provider === "openrouter" || provider === "nvidia") {
                 const result = parseOpenAIStreamLine(line);
                 if (result.done) {
                   controller.enqueue(
@@ -517,6 +528,89 @@ async function callGoogle(
       systemInstruction: { parts: [{ text: systemPrompt }] },
       contents: [{ role: "user", parts }],
       generationConfig: { temperature: 0.7, maxOutputTokens: 4096 },
+    }),
+  });
+}
+
+// ---- Groq (OpenAI-compatible) ----
+
+async function callGroq(
+  groqKey: string,
+  model: string,
+  systemPrompt: string,
+  userContent: UserContent
+): Promise<Response> {
+  return fetch("https://api.groq.com/openai/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${groqKey}`,
+    },
+    body: JSON.stringify({
+      model,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userContent },
+      ],
+      stream: true,
+      temperature: 0.7,
+      max_tokens: 4096,
+    }),
+  });
+}
+
+// ---- OpenRouter (OpenAI-compatible) ----
+
+async function callOpenRouter(
+  orKey: string,
+  model: string,
+  systemPrompt: string,
+  userContent: UserContent
+): Promise<Response> {
+  return fetch("https://openrouter.ai/api/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${orKey}`,
+      "HTTP-Referer": "http://localhost:3000",
+      "X-Title": "Ultimate Vibe Coder",
+    },
+    body: JSON.stringify({
+      model,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userContent },
+      ],
+      stream: true,
+      temperature: 0.7,
+      max_tokens: 4096,
+    }),
+  });
+}
+
+// ---- NVIDIA NIM (OpenAI-compatible) ----
+
+async function callNvidia(
+  nvKey: string,
+  model: string,
+  systemPrompt: string,
+  userContent: UserContent
+): Promise<Response> {
+  return fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${nvKey}`,
+    },
+    body: JSON.stringify({
+      model,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userContent },
+      ],
+      stream: true,
+      temperature: 0.7,
+      max_tokens: 4096,
     }),
   });
 }

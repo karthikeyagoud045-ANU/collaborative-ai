@@ -32,7 +32,7 @@ export const MAX_COMMAND_LENGTH = 1_000;
 export const MAX_FILE_PATH_LENGTH = 256;
 
 /** Supported AI providers */
-export const AI_PROVIDERS = ["openai", "anthropic", "google"] as const;
+export const AI_PROVIDERS = ["openai", "anthropic", "google", "groq", "openrouter", "nvidia"] as const;
 
 export type AIProvider = (typeof AI_PROVIDERS)[number];
 

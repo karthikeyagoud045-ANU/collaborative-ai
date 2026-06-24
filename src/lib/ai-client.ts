@@ -18,11 +18,13 @@ export interface AIStreamRequest {
   prompt: string;
   code: string;
   apiKey: string;
-  provider: "openai" | "anthropic" | "google";
+  provider: "openai" | "anthropic" | "google" | "groq" | "openrouter" | "nvidia";
   model: string;
   imageBase64?: string;
   imageMimeType?: string;
 }
+
+export type AIProviderType = AIStreamRequest["provider"];
 
 export interface AIStreamCallbacks {
   onToken: (token: string) => void;
@@ -97,7 +99,6 @@ export async function streamAIResponse(
       }
     }
 
-    // Fallback if no "done" event received
     if (fullText && !fullText.endsWith("[DONE]")) {
       callbacks.onComplete(fullText);
     }

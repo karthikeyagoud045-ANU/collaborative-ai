@@ -6,7 +6,6 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { v4 as uuidv4 } from "uuid";
 
-// DEV MODE: Mock user — no Supabase auth required
 const DEV_USER = {
   id: "dev-user-001",
   username: "Developer",
@@ -17,58 +16,38 @@ const DEV_USER = {
 export default function DashboardPage() {
   const router = useRouter();
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const user = DEV_USER;
 
   const handleCreateRoom = () => {
     const newRoomId = uuidv4().slice(0, 8);
     router.push(`/room/${newRoomId}`);
   };
 
-  const user = DEV_USER;
-
   return (
     <div className="dashboard-page">
       <div className="landing-bg" />
 
       <header className="dashboard-header" style={{ position: "relative", zIndex: 2 }}>
-        <div className="dashboard-header-left">
-          <div className="topbar-logo">
-            <div className="topbar-logo-icon">⚡</div>
-            <span>Vibe Code</span>
-          </div>
+        <div className="topbar-logo">
+          <div className="topbar-logo-icon">⚡</div>
+          <span>Ultimate Vibe Coder</span>
         </div>
-        <div className="dashboard-header-right">
+        <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
           <div className="user-menu">
             <button
               className="user-menu-trigger"
               onClick={() => setShowUserMenu(!showUserMenu)}
-              id="dashboard-user-menu"
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={user.avatarUrl}
-                alt={user.username}
-                className="user-menu-avatar"
-              />
+              <img src={user.avatarUrl} alt={user.username} className="user-menu-avatar" />
               <span className="user-menu-name">{user.username}</span>
             </button>
-
             {showUserMenu && (
               <div className="user-menu-dropdown">
-                <div
-                  style={{
-                    padding: "var(--space-sm) var(--space-md)",
-                    fontSize: "var(--font-size-xs)",
-                    color: "var(--text-tertiary)",
-                  }}
-                >
+                <div style={{ padding: "0.5rem 0.75rem", fontSize: "0.75rem", color: "var(--text-tertiary)" }}>
                   {user.email}
                 </div>
                 <div className="user-menu-divider" />
-                <button
-                  className="user-menu-item"
-                  onClick={() => router.push("/")}
-                  id="dashboard-sign-out"
-                >
+                <button className="user-menu-item" onClick={() => router.push("/")}>
                   🚪 Sign Out
                 </button>
               </div>
@@ -78,37 +57,31 @@ export default function DashboardPage() {
       </header>
 
       <div className="dashboard-content" style={{ position: "relative", zIndex: 1 }}>
-        <h1 className="dashboard-title">Welcome back, {user.username} 👋</h1>
-        <p className="dashboard-subtitle">
-          Create a new room or join an existing one to start collaborating.
-        </p>
+        <h1 className="dashboard-title">Welcome back, {user.username}</h1>
+        <p className="dashboard-subtitle">Create a new room or join an existing one to start collaborating.</p>
 
         <div className="dashboard-actions">
-          <button
-            className="btn btn-primary"
-            onClick={handleCreateRoom}
-            id="dashboard-create-room"
-          >
-            ✨ Create New Room
+          <button className="btn btn-primary" onClick={handleCreateRoom}>
+            Create New Room
           </button>
         </div>
 
         <div className="room-grid">
           <div
-            className="room-card glass"
+            className="card"
             style={{
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
               justifyContent: "center",
-              padding: "var(--space-3xl)",
+              padding: "3rem",
               cursor: "pointer",
-              borderStyle: "dashed",
+              border: "1px dashed var(--border-secondary)",
             }}
             onClick={handleCreateRoom}
           >
-            <div style={{ fontSize: "2rem", marginBottom: "var(--space-md)", opacity: 0.4 }}>+</div>
-            <div style={{ color: "var(--text-tertiary)", fontSize: "var(--font-size-sm)" }}>
+            <div style={{ fontSize: "1.5rem", marginBottom: "0.75rem", opacity: 0.3 }}>+</div>
+            <div style={{ color: "var(--text-tertiary)", fontSize: "0.875rem" }}>
               Create new room
             </div>
           </div>

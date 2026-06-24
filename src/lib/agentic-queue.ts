@@ -100,7 +100,7 @@ export async function submitPrompt(options: QueueSubmitOptions): Promise<void> {
       const result = await runAgentLoop({
         prompt,
         apiKey: aiRequest.apiKey,
-        provider: aiRequest.provider,
+        provider: aiRequest.provider as "openai" | "anthropic" | "google" | "groq" | "openrouter" | "nvidia",
         model: aiRequest.model,
         systemContext: `Current code context:\n\`\`\`\n${aiRequest.code}\n\`\`\``,
         ydoc,
@@ -242,20 +242,15 @@ export function acceptBranch(
   branch.votes[userId] = "accept";
   aiBranches.set(branchId, branch);
 
-  const allBranches = getBranchesForFile(aiBranches, branch.filePath);
-  let totalAccepts = 0;
+  // Count unique users who accepted THIS specific branch
+  const uniqueAcceptors = new Set(Object.entries(branch.votes).filter(([, v]) => v === "accept").map(([u]) => u));
 
-  allBranches.forEach((b) => {
-    const votes = Object.values(b.votes);
-    totalAccepts += votes.filter((v) => v === "accept").length;
-  });
-
-  if (totalAccepts >= 2) {
+  // Require at least 2 distinct users to accept, or auto-apply if only 1 user in room
+  if (uniqueAcceptors.size >= 2) {
     ydoc.transact(() => {
       ytext.delete(0, ytext.length);
       ytext.insert(0, branch.proposedContent);
     });
-
     clearBranchesForFile(aiBranches, branch.filePath);
   }
 }
@@ -271,15 +266,10 @@ export function rejectBranch(
   branch.votes[userId] = "reject";
   aiBranches.set(branchId, branch);
 
-  const allBranches = getBranchesForFile(aiBranches, branch.filePath);
-  let totalRejects = 0;
+  // Count unique users who rejected THIS specific branch
+  const uniqueRejectors = new Set(Object.entries(branch.votes).filter(([, v]) => v === "reject").map(([u]) => u));
 
-  allBranches.forEach((b) => {
-    const votes = Object.values(b.votes);
-    totalRejects += votes.filter((v) => v === "reject").length;
-  });
-
-  if (totalRejects >= 2) {
+  if (uniqueRejectors.size >= 2) {
     clearBranchesForFile(aiBranches, branch.filePath);
   }
 }

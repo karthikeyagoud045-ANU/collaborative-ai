@@ -1,82 +1,58 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { updateSession } from "@/utils/supabase/middleware";
-import { Ratelimit } from "@upstash/ratelimit";
-import { Redis } from "@upstash/redis";
 
-// Initialize rate limiter only if Upstash is configured
-let ratelimit: Ratelimit | null = null;
+// Simple in-memory rate limiter (no external deps)
+const rateLimitBuckets = new Map<string, { count: number; resetAt: number }>();
+const RATE_LIMIT_WINDOW_MS = 60_000;
+const RATE_LIMIT_MAX = 30;
 
-if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
-  ratelimit = new Ratelimit({
-    redis: Redis.fromEnv(),
-    limiter: Ratelimit.slidingWindow(30, "60 s"), // 30 requests per minute
-    analytics: true,
-  });
+function checkRateLimit(key: string): boolean {
+  const now = Date.now();
+  const bucket = rateLimitBuckets.get(key);
+  if (!bucket || bucket.resetAt <= now) {
+    rateLimitBuckets.set(key, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+    return true;
+  }
+  if (bucket.count >= RATE_LIMIT_MAX) return false;
+  bucket.count++;
+  return true;
 }
 
-async function handleRateLimit(request: NextRequest, key: string): Promise<NextResponse | null> {
-  if (!ratelimit) return null; // No rate limiting if Upstash not configured
-
-  const ip = request.headers.get("x-forwarded-for") || request.headers.get("x-real-ip") || "anonymous";
-  const identifier = `${key}:${ip}`;
-
-  const { success, limit, remaining, reset } = await ratelimit.limit(identifier);
-
-  if (!success) {
-    return NextResponse.json(
-      {
-        error: "Rate limit exceeded",
-        retryAfter: Math.ceil((reset - Date.now()) / 1000),
-      },
-      {
-        status: 429,
-        headers: {
-          "X-RateLimit-Limit": limit.toString(),
-          "X-RateLimit-Remaining": remaining.toString(),
-          "X-RateLimit-Reset": reset.toString(),
-          "Retry-After": Math.ceil((reset - Date.now()) / 1000).toString(),
-        },
-      }
-    );
-  }
-
-  return null; // No rate limit hit
+function getClientIp(req: NextRequest): string {
+  return req.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
+    || req.headers.get("x-real-ip")?.trim()
+    || "anonymous";
 }
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const ip = getClientIp(request);
 
-  // Rate limit AI proxy (30 requests per minute)
+  // Rate limit AI proxy
   if (pathname.startsWith("/api/ai")) {
-    const rateLimitResponse = await handleRateLimit(request, "ai");
-    if (rateLimitResponse) return rateLimitResponse;
+    if (!checkRateLimit(`ai:${ip}`)) {
+      return NextResponse.json(
+        { error: "Rate limit exceeded" },
+        { status: 429, headers: { "Retry-After": "60" } }
+      );
+    }
   }
 
-  // Rate limit GitHub API (10 requests per minute)
-  if (pathname.startsWith("/api/github")) {
-    const rateLimitResponse = await handleRateLimit(request, "github");
-    if (rateLimitResponse) return rateLimitResponse;
-  }
-
-  // Rate limit templates (20 requests per minute)
+  // Rate limit templates
   if (pathname.startsWith("/api/templates")) {
-    const rateLimitResponse = await handleRateLimit(request, "templates");
-    if (rateLimitResponse) return rateLimitResponse;
+    if (!checkRateLimit(`templates:${ip}`)) {
+      return NextResponse.json(
+        { error: "Rate limit exceeded" },
+        { status: 429, headers: { "Retry-After": "60" } }
+      );
+    }
   }
 
-  // Default session handling (DEV MODE: passes through without auth)
-  return await updateSession();
+  // Pass through — no Supabase session middleware in dev mode
+  return NextResponse.next();
 }
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - auth/ (auth callback routes)
-     */
     "/((?!_next/static|_next/image|favicon\\.ico|auth/|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };
