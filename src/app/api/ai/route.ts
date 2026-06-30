@@ -4,6 +4,7 @@ import {
   AI_RATE_LIMIT_PER_MINUTE,
   AI_RATE_LIMIT_WINDOW_MS,
   ALLOWED_IMAGE_MIME_TYPES,
+  ALLOWED_ORIGINS,
   ERROR_MESSAGES,
   MAX_API_KEY_LENGTH,
   MAX_CODE_CONTEXT_LENGTH,
@@ -53,10 +54,74 @@ const rateLimitBuckets = new Map<string, RateLimitBucket>();
 
 export async function POST(req: NextRequest) {
   try {
+    // CORS: reject requests from unexpected origins
+    const requestOrigin = req.headers.get("origin");
+    if (requestOrigin && !ALLOWED_ORIGINS.some((allowed) => requestOrigin.includes(allowed.replace("*", "")))) {
+      return NextResponse.json({ error: "Origin not allowed" }, { status: 403 });
+    }
+
     enforceRateLimit(getClientIdentifier(req));
 
     const payload = await parseAIRequest(req);
-    const { prompt, code, apiKey, provider, model, imageBase64, imageMimeType } = payload;
+    let { prompt, code, apiKey, provider, model, imageBase64, imageMimeType } = payload;
+
+    // Round-Robin: Check user's key pool first, then fall back to env vars
+    if (!apiKey || apiKey.trim() === "") {
+      // Try authenticated user's key pool (round-robin via DB function)
+      try {
+        const authHeader = req.headers.get("authorization");
+        if (authHeader?.startsWith("Bearer ")) {
+          // JWT passed from client — use it to call round-robin RPC
+          const token = authHeader.slice(7);
+          const poolRes = await fetch(
+            `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/rpc/get_next_api_key`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+                apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+              },
+              body: JSON.stringify({ p_user_id: null, p_provider: provider }),
+            }
+          );
+          if (poolRes.ok) {
+            const poolData = await poolRes.json();
+            if (poolData && poolData.length > 0 && poolData[0].key_val) {
+              apiKey = poolData[0].key_val;
+            }
+          }
+        }
+      } catch { /* fall through to env fallback */ }
+
+      // Fallback to .env.local keys
+      if (!apiKey || apiKey.trim() === "") {
+        const envFallback: Record<string, string | undefined> = {
+          openai: process.env.OPENAI_API_KEY,
+          anthropic: process.env.ANTHROPIC_API_KEY,
+          google: process.env.GOOGLE_API_KEY,
+          groq: process.env.GROQ_API_KEY,
+          openrouter: process.env.OPENROUTER_API_KEY,
+          nvidia: process.env.NVIDIA_CODING_API_KEY,
+        };
+        apiKey = envFallback[provider] || "";
+      }
+
+      // Smart routing: if key is an OpenRouter key but provider isn't openrouter, fix it
+      if (apiKey.startsWith("sk-or-") && provider !== "openrouter") {
+        provider = "openrouter";
+      }
+      // If key is a Groq key but provider isn't groq, fix it
+      if (apiKey.startsWith("gsk_") && provider !== "groq") {
+        provider = "groq";
+      }
+    }
+    if (!apiKey) {
+      return NextResponse.json(
+        { error: "No API key configured. Please enter one in the UI or add to .env.local." },
+        { status: 400 }
+      );
+    }
 
     const systemPrompt = buildSystemPrompt(code);
 
@@ -239,7 +304,7 @@ async function parseAIRequest(req: NextRequest): Promise<AIRequestPayload> {
   }
 
   const prompt = getRequiredString(body, "prompt");
-  const apiKey = getRequiredString(body, "apiKey");
+  const apiKey = getOptionalString(body, "apiKey") ?? "";
   const providerValue = getRequiredString(body, "provider");
   const model = getRequiredString(body, "model");
   const code = getOptionalString(body, "code") ?? "";
