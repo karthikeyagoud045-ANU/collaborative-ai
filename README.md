@@ -1,11 +1,11 @@
-# ⚡ Ultimate Vibe Coder
+# ⚡ Collaborative AI
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Next.js](https://img.shields.io/badge/Next.js-15.0-black?logo=next.js)
 ![WebContainers](https://img.shields.io/badge/WebContainers-API-blueviolet)
 ![Yjs](https://img.shields.io/badge/Yjs-CRDT-orange)
 
-**Ultimate Vibe Coder** is a next-generation, browser-based collaborative AI IDE. It combines the power of in-browser Node.js execution (WebContainers), real-time multiplayer editing (Yjs), and a fully autonomous AI agentic loop to write, test, and preview code directly in your browser.
+**Collaborative AI** is a next-generation, browser-based collaborative AI IDE. It combines the power of in-browser Node.js execution (WebContainers), real-time multiplayer editing (Yjs), and a fully autonomous AI agentic loop to write, test, and preview code directly in your browser.
 
 ---
 
@@ -41,8 +41,8 @@
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/karthikeyagoud045-ANU/ultimate-vibe-coder.git
-cd ultimate-vibe-coder
+git clone https://github.com/karthikeyagoud045-ANU/collaborative-ai.git
+cd collaborative-ai
 ```
 
 ### 2. Install dependencies
