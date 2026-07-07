@@ -295,7 +295,7 @@ export default function RoomPage() {
     if (keyVal.startsWith("sk-")) return "openai";
     return null;
   }, []);
-  const [aiModel, setAiModel] = useState("gpt-4o-mini");
+  const [aiModel, setAiModel] = useState("nvidia/nemotron-3-ultra-550b-a55b:free");
   const [aiMode, setAiMode] = useState<"chat" | "agent">("chat");
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [rightTab, setRightTab] = useState<"chat" | "ai">("ai");

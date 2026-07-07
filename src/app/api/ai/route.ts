@@ -107,13 +107,30 @@ export async function POST(req: NextRequest) {
         apiKey = envFallback[provider] || "";
       }
 
-      // Smart routing: if key is an OpenRouter key but provider isn't openrouter, fix it
-      if (apiKey.startsWith("sk-or-") && provider !== "openrouter") {
+      // Smart routing: detect the REAL provider from key prefix so a mislabeled
+      // env key (e.g. OPENAI_API_KEY holding an sk-or- key) routes correctly.
+      if (apiKey.startsWith("sk-or-")) {
         provider = "openrouter";
-      }
-      // If key is a Groq key but provider isn't groq, fix it
-      if (apiKey.startsWith("gsk_") && provider !== "groq") {
+      } else if (apiKey.startsWith("gsk_")) {
         provider = "groq";
+      } else if (apiKey.startsWith("sk-ant-")) {
+        provider = "anthropic";
+      } else if (apiKey.startsWith("AIza")) {
+        provider = "google";
+      } else if (apiKey.startsWith("nvapi-")) {
+        provider = "nvidia";
+      }
+      // If still no key, retry env with the corrected provider
+      if ((!apiKey || apiKey.trim() === "") && provider !== payload.provider) {
+        const envFallback2: Record<string, string | undefined> = {
+          openai: process.env.OPENAI_API_KEY,
+          anthropic: process.env.ANTHROPIC_API_KEY,
+          google: process.env.GOOGLE_API_KEY,
+          groq: process.env.GROQ_API_KEY,
+          openrouter: process.env.OPENROUTER_API_KEY,
+          nvidia: process.env.NVIDIA_CODING_API_KEY,
+        };
+        apiKey = envFallback2[provider] || "";
       }
     }
     if (!apiKey) {
