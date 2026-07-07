@@ -6,10 +6,10 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install production dependencies only
-RUN npm ci --only=production
+RUN npm ci --only=production --legacy-peer-deps
 
 # Copy server source
-COPY server/ ./
+COPY . ./
 
 # Expose WebSocket port
 EXPOSE 8080
