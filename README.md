@@ -101,6 +101,3 @@ The frontend is optimized for **Vercel**.
 The WebSocket server (`server/index.js`) can be deployed to **Fly.io**, **Render**, or **Railway**. 
 A `fly.toml` and `Dockerfile` are included in the `server/` directory for immediate deployment to Fly.io.
 
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
