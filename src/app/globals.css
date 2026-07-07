@@ -1,41 +1,54 @@
 /* ============================================================
-   ULTIMATE VIBE CODER — Design System
-   Premium Minimal SaaS — Lovable.dev aesthetic
-   Clean, spacious, monochrome + single accent
+   ULTIMATE VIBE CODER — Claude Design System
+   Warm editorial interface inspired by Anthropic's Claude
+   Cream canvas + coral accents + dark navy surfaces
    ============================================================ */
 
-/* ---- Google Fonts (Inter + JetBrains Mono) ---- */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+/* ---- Google Fonts (Cormorant Garamond + Inter + JetBrains Mono) ---- */
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
 /* ---- Color Tokens — Light Mode (default) ---- */
 :root {
   color-scheme: light;
 
-  /* Backgrounds — warm whites */
-  --bg-primary: #ffffff;
-  --bg-secondary: #fafafa;
-  --bg-tertiary: #f5f5f5;
+  /* Brand & Accent */
+  --primary: #cc785c;
+  --primary-active: #a9583e;
+  --primary-disabled: #e6dfd8;
+  
+  /* Backgrounds — warm cream canvas */
+  --bg-primary: #faf9f5;
+  --bg-secondary: #f5f0e8;
+  --bg-tertiary: #efe9de;
   --bg-elevated: #ffffff;
-  --bg-hover: #f0f0f0;
+  --bg-hover: #f0ede6;
+  
+  /* Dark surfaces for product mockups */
+  --surface-dark: #181715;
+  --surface-dark-elevated: #252320;
+  --surface-dark-soft: #1f1e1b;
 
-  /* Accent — refined indigo */
-  --accent: #4f46e5;
-  --accent-blue: #4f46e5;
-  --accent-green: #059669;
-  --accent-red: #dc2626;
-  --accent-orange: #d97706;
-  --accent-purple: #7c3aed;
-
-  /* Text */
-  --text-primary: #0a0a0a;
-  --text-secondary: #525252;
-  --text-tertiary: #a3a3a3;
+  /* Text — warm ink */
+  --text-primary: #141413;
+  --text-secondary: #3d3d3a;
+  --text-strong: #252523;
+  --text-muted: #6c6a64;
+  --text-muted-soft: #8e8b82;
   --text-inverse: #ffffff;
+  --text-on-dark: #faf9f5;
+  --text-on-dark-soft: #a09d96;
 
   /* Borders — hairline */
-  --border-primary: #e5e5e5;
-  --border-secondary: #d4d4d4;
-  --border-accent: rgba(79, 70, 229, 0.25);
+  --border-primary: #e6dfd8;
+  --border-secondary: #ebe6df;
+  --border-accent: rgba(204, 120, 92, 0.25);
+
+  /* Semantic colors */
+  --success: #5db872;
+  --warning: #d4a017;
+  --error: #c64545;
+  --accent-teal: #5db8a6;
+  --accent-amber: #e8a55a;
 
   /* Spacing */
   --space-xs: 0.25rem;
@@ -54,6 +67,7 @@
   --radius-full: 9999px;
 
   /* Typography */
+  --font-serif: 'Cormorant Garamond', 'Times New Roman', serif;
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --font-mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
   --font-size-xs: 0.75rem;
@@ -86,12 +100,9 @@
     --bg-elevated: #1a1a1a;
     --bg-hover: #262626;
 
-    --accent: #6366f1;
-    --accent-blue: #6366f1;
-    --accent-green: #10b981;
-    --accent-red: #ef4444;
-    --accent-orange: #f59e0b;
-    --accent-purple: #8b5cf6;
+    --primary: #cc785c;
+    --primary-active: #a9583e;
+    --primary-disabled: #2a2825;
 
     --text-primary: #fafafa;
     --text-secondary: #a3a3a3;
@@ -100,7 +111,7 @@
 
     --border-primary: #262626;
     --border-secondary: #333333;
-    --border-accent: rgba(99, 102, 241, 0.25);
+    --border-accent: rgba(204, 120, 92, 0.25);
 
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
     --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.3);
@@ -228,12 +239,12 @@ input::placeholder, textarea::placeholder {
 
 .btn-primary {
   color: var(--text-inverse);
-  background: var(--accent);
-  border-color: var(--accent);
+  background: var(--primary);
+  border-color: var(--primary);
 }
 .btn-primary:hover:not(:disabled) {
-  background: #4338ca;
-  border-color: #4338ca;
+  background: var(--primary-active);
+  border-color: var(--primary-active);
 }
 
 .btn-secondary {
