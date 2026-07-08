@@ -19,6 +19,8 @@ import { VersionHistory, type VersionEntry } from "@/components/VersionHistory";
 import { BuildHistory } from "@/components/BuildHistory";
 import { ContextAttachments } from "@/components/ContextAttachments";
 import { useCodebaseDownloader } from "@/hooks/useDownloader";
+import { ModelPicker } from "@/components/ModelPicker";
+import { DeletePopover } from "@/components/ui/DeletePopover";
 
 const WS_URL = process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:8080";
 const DEV_USER = {
@@ -314,10 +316,22 @@ export default function RoomPage() {
     { name: "package.json", path: "package.json", isDir: false },
   ]);
   const [agentLogs, setAgentLogs] = useState<Array<{ type: string; content: string }>>([]);
-  const [leftPanelWidth, setLeftPanelWidth] = useState(200);
+  const [leftPanelWidth, setLeftPanelWidth] = useState(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("ide-left-panel-width");
+      return saved ? parseInt(saved, 10) : 200;
+    }
+    return 200;
+  });
   const [showLeftPanel, setShowLeftPanel] = useState(true);
   const [showArtistMode, setShowArtistMode] = useState(false);
-  const [rightPanelWidth, setRightPanelWidth] = useState(340);
+  const [rightPanelWidth, setRightPanelWidth] = useState(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("ide-right-panel-width");
+      return saved ? parseInt(saved, 10) : 340;
+    }
+    return 340;
+  });
   const [previewDevice, setPreviewDevice] = useState<"desktop" | "tablet" | "mobile">("desktop");
   const resizeRef = useRef<{ startX: number; startW: number; panel: string } | null>(null);
   const aiMessagesEndRef = useRef<HTMLDivElement>(null);
@@ -325,6 +339,11 @@ export default function RoomPage() {
   const [selectedAgent, setSelectedAgent] = useState<AgentRole>("coder");
   const [agentMemories, setAgentMemories] = useState<AgentMemory[]>([]);
   const [showMemoryPanel, setShowMemoryPanel] = useState(false);
+  // Delete popover state
+  const [deleteTarget, setDeleteTarget] = useState<{ path: string; rect: DOMRect } | null>(null);
+  // Inline rename state
+  const [renamingFile, setRenamingFile] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState("");
   // Orchestrator state
   const [orchestratorSteps, setOrchestratorSteps] = useState<ThinkingStep[]>([]);
   const [showOrchestrator, setShowOrchestrator] = useState(false);
@@ -436,15 +455,29 @@ export default function RoomPage() {
       if (!resizeRef.current) return;
       const diff = ev.clientX - resizeRef.current.startX;
       if (resizeRef.current.panel === "left") {
-        setLeftPanelWidth(Math.max(120, Math.min(400, resizeRef.current.startW + diff)));
+        const newW = Math.max(120, Math.min(400, resizeRef.current.startW + diff));
+        setLeftPanelWidth(newW);
+        localStorage.setItem("ide-left-panel-width", String(newW));
       } else {
-        setRightPanelWidth(Math.max(260, Math.min(600, resizeRef.current.startW - diff)));
+        const newW = Math.max(260, Math.min(600, resizeRef.current.startW - diff));
+        setRightPanelWidth(newW);
+        localStorage.setItem("ide-right-panel-width", String(newW));
       }
     };
     const handleUp = () => { resizeRef.current = null; document.removeEventListener("mousemove", handleMove); document.removeEventListener("mouseup", handleUp); };
     document.addEventListener("mousemove", handleMove);
     document.addEventListener("mouseup", handleUp);
   }, [leftPanelWidth, rightPanelWidth]);
+
+  const handleResizeReset = useCallback((panel: string) => {
+    if (panel === "left") {
+      setLeftPanelWidth(200);
+      localStorage.setItem("ide-left-panel-width", "200");
+    } else {
+      setRightPanelWidth(340);
+      localStorage.setItem("ide-right-panel-width", "340");
+    }
+  }, []);
 
   const handleCodeChange = useCallback((newCode: string) => {
     setCode(newCode);
@@ -473,6 +506,54 @@ export default function RoomPage() {
   }, [code, handleCodeChange]);
 
   const handleFileSelect = useCallback((path: string) => setActiveFile(path), []);
+
+  const handleFileDelete = useCallback((path: string, btnRect?: DOMRect) => {
+    if (!ydoc) return;
+    if (files.length <= 1) {
+      showToast("Cannot delete the last file", "error");
+      return;
+    }
+    if (btnRect) {
+      setDeleteTarget({ path, rect: btnRect });
+    } else {
+      // Fallback if no rect — perform delete directly
+      const yf = ydoc.getMap("files");
+      ydoc.transact(() => { yf.delete(path); });
+      if (activeFile === path) {
+        const remaining = Array.from(yf.keys()).filter(k => typeof k === "string") as string[];
+        if (remaining.length > 0) setActiveFile(remaining[0]);
+      }
+      showToast(`Deleted ${path}`, "success");
+    }
+  }, [ydoc, files, activeFile]);
+
+  const confirmDelete = useCallback(() => {
+    if (!deleteTarget || !ydoc) return;
+    const yf = ydoc.getMap("files");
+    ydoc.transact(() => { yf.delete(deleteTarget.path); });
+    if (activeFile === deleteTarget.path) {
+      const remaining = Array.from(yf.keys()).filter(k => typeof k === "string") as string[];
+      if (remaining.length > 0) setActiveFile(remaining[0]);
+    }
+    showToast(`Deleted ${deleteTarget.path}`, "success");
+    setDeleteTarget(null);
+  }, [deleteTarget, ydoc, activeFile]);
+
+  const handleRename = useCallback((oldPath: string, newName: string) => {
+    if (!ydoc || !newName.trim() || newName === oldPath) {
+      setRenamingFile(null);
+      return;
+    }
+    const yf = ydoc.getMap("files");
+    const content = yf.get(oldPath);
+    ydoc.transact(() => {
+      yf.set(newName, content || "");
+      yf.delete(oldPath);
+    });
+    if (activeFile === oldPath) setActiveFile(newName);
+    setRenamingFile(null);
+    showToast(`Renamed to ${newName}`, "success");
+  }, [ydoc, activeFile]);
 
   const handleChatSend = useCallback(() => {
     const trimmed = chatInput.trim();
@@ -669,23 +750,46 @@ export default function RoomPage() {
     finally { setIsPreviewLoading(false); }
   }, [ydoc]);
 
-  const providerIcons: Record<string, string> = { openai: "🟢", anthropic: "🟠", google: "🔵", groq: "⚡", openrouter: "🌐", nvidia: "🟩" };
+  const providerIcons: Record<string, string> = { openai: "●", anthropic: "●", google: "●", groq: "●", openrouter: "●", nvidia: "●" };
 
   return (
     <div className="ide-layout">
       <header className="topbar">
         <div className="topbar-logo">
           <div className="topbar-logo-icon">⚡</div>
-          <span>Ultimate Vibe Coder</span>
+          <span style={{ fontFamily: "var(--font-serif)", fontWeight: 400, letterSpacing: "-0.02em" }}>Ultimate Vibe Coder</span>
         </div>
         <div className="topbar-right">
           <div className="status-indicator">
             <div className={`status-dot ${connected ? "status-dot-connected" : "status-dot-connecting"}`} />
             <span>{connected ? "Connected" : "Connecting..."}</span>
           </div>
-          <button className="btn btn-ghost btn-sm" onClick={handleDownloadCodebase} title="Download Codebase">📦</button>
-          <button className="btn btn-ghost btn-sm" onClick={handleGitPush} title="Push to GitHub">🐙</button>
-          <button className="btn btn-ghost btn-sm" onClick={() => setShowSettings(true)} title="Project Settings">⚙️</button>
+          <ModelPicker
+            apiKey={k}
+            selectedModel={aiModel}
+            onModelSelect={(model) => setAiModel(model)}
+            onApiKeyChange={(key) => setK(key)}
+            provider={aiProvider}
+            onProviderChange={(p) => setAiProvider(p as any)}
+          />
+          <div className="topbar-actions">
+            <button className="toolbar-btn" onClick={handleDownloadCodebase} title="Download Codebase">
+              <span className="toolbar-btn-icon">📦</span>
+              <span className="toolbar-btn-label">Download</span>
+            </button>
+            <button className="toolbar-btn" onClick={handleGitPush} title="Push to GitHub">
+              <span className="toolbar-btn-icon">🐙</span>
+              <span className="toolbar-btn-label">Git Push</span>
+            </button>
+            <button className="toolbar-btn" onClick={() => setShowSettings(true)} title="Project Settings">
+              <span className="toolbar-btn-icon">⚙️</span>
+              <span className="toolbar-btn-label">Settings</span>
+            </button>
+            <button className="toolbar-btn toolbar-btn-primary" onClick={handleStartPreview} disabled={isPreviewLoading} title="Deploy Preview">
+              <span className="toolbar-btn-icon">{isPreviewLoading ? "⏳" : "▶"}</span>
+              <span className="toolbar-btn-label">{isPreviewLoading ? "Starting..." : "Deploy"}</span>
+            </button>
+          </div>
           <span
             className="room-id-copy"
             onClick={() => { navigator.clipboard.writeText(roomId); showToast("Room ID copied!", "success"); }}
@@ -700,12 +804,12 @@ export default function RoomPage() {
         {/* Left Sidebar */}
         <div className="ide-sidebar">
           {[
-            { icon: "📁", label: "Files", action: () => setShowLeftPanel(true) },
+            { icon: "☰", label: "Files", action: () => setShowLeftPanel(true) },
             { icon: "💬", label: "Chat", action: () => setRightTab("chat") },
-            { icon: "🎨", label: "Artist", action: () => setShowArtistMode(true) },
+            { icon: "✎", label: "Artist", action: () => setShowArtistMode(true) },
             { icon: "🔍", label: "Search" },
-            { icon: "📦", label: "Build History", action: () => setShowBuildHistory(true) },
-            { icon: "⚙️", label: "Settings", action: () => setShowSettings(true) },
+            { icon: "◷", label: "Build History", action: () => setShowBuildHistory(true) },
+            { icon: "⚙", label: "Settings", action: () => setShowSettings(true) },
           ].map((item) => (
             <button key={item.label} className="btn btn-ghost btn-sm sidebar-btn" title={item.label} onClick={item.action}>
               {item.icon}
@@ -718,32 +822,63 @@ export default function RoomPage() {
           {/* File Tree */}
           {showLeftPanel && (
             <div style={{ display: "flex" }}>
-              <div className="ide-panel" style={{ width: leftPanelWidth }}>
+              <div className="ide-panel file-tree-dark" style={{ width: leftPanelWidth }}>
                 <div className="ide-panel-header">
                   <span className="ide-panel-title">Files</span>
                   <div style={{ display: "flex", gap: "4px" }}>
-                    <button className="btn btn-ghost btn-sm" onClick={() => {
+                    <button className="btn btn-ghost btn-sm" style={{ color: "var(--text-on-dark-soft)" }} onClick={() => {
                       const name = prompt("File name (e.g. app.js, style.css, index.html):");
                       if (!name) return;
                       const path = name;
                       if (ydoc) { const yf = ydoc.getMap("files"); ydoc.transact(() => { yf.set(path, ""); }); }
                       setActiveFile(path);
                     }} title="Add file">+</button>
-                    <button className="btn btn-ghost btn-sm" onClick={() => setShowLeftPanel(false)}>✕</button>
+                    <button className="btn btn-ghost btn-sm" style={{ color: "var(--text-on-dark-soft)" }} onClick={() => setShowLeftPanel(false)}>✕</button>
                   </div>
                 </div>
                 <div className="ide-panel-body">
                   {files.map((file) => (
-                    <div key={file.path} className={`file-tree-item ${activeFile === file.path ? "active" : ""}`} onClick={() => handleFileSelect(file.path)}>
-                      <span className="file-icon">
-                        {file.name.endsWith(".html") ? "🌐" : file.name.endsWith(".css") ? "🎨" : file.name.endsWith(".js") ? "📜" : file.name.endsWith(".json") ? "📋" : "📄"}
+                    <div
+                      key={file.path}
+                      className={`file-tree-item ${activeFile === file.path ? "active" : ""}`}
+                      onClick={() => handleFileSelect(file.path)}
+                      onDoubleClick={(e) => {
+                        e.stopPropagation();
+                        setRenamingFile(file.path);
+                        setRenameValue(file.name);
+                      }}
+                    >
+                      <span className="file-icon" style={{ fontSize: "var(--font-size-xs)", color: file.name.endsWith(".html") ? "var(--primary)" : file.name.endsWith(".css") ? "var(--accent-teal)" : file.name.endsWith(".js") ? "var(--accent-amber)" : "var(--text-on-dark-soft)" }}>
+                        {file.name.endsWith(".html") ? "<>" : file.name.endsWith(".css") ? "#" : file.name.endsWith(".js") ? "{}" : file.name.endsWith(".json") ? "[]" : "—"}
                       </span>
-                      <span>{file.name}</span>
+                      {renamingFile === file.path ? (
+                        <input
+                          className="file-rename-input"
+                          value={renameValue}
+                          onChange={(e) => setRenameValue(e.target.value)}
+                          onBlur={() => handleRename(file.path, renameValue)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") handleRename(file.path, renameValue);
+                            if (e.key === "Escape") setRenamingFile(null);
+                          }}
+                          autoFocus
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      ) : (
+                        <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{file.name}</span>
+                      )}
+                      <button
+                        className="file-delete-btn"
+                        onClick={(e) => { e.stopPropagation(); handleFileDelete(file.path, (e.target as HTMLElement).getBoundingClientRect()); }}
+                        title={`Delete ${file.name}`}
+                      >
+                        ✕
+                      </button>
                     </div>
                   ))}
                 </div>
               </div>
-              <div className="resize-handle" onMouseDown={(e) => handleResizeStart(e, "left")} />
+              <div className="resize-handle" onMouseDown={(e) => handleResizeStart(e, "left")} onDoubleClick={() => handleResizeReset("left")} />
             </div>
           )}
 
@@ -751,7 +886,7 @@ export default function RoomPage() {
           <div className="ide-panel" style={{ flex: 1 }}>
             <div className="ide-panel-header">
               <span className="ide-panel-title">{activeFile}</span>
-              <span className="badge badge-blue">{activeFile.split(".").pop()?.toUpperCase() || "TXT"}</span>
+              <span className="badge badge-coral">{activeFile.split(".").pop()?.toUpperCase() || "TXT"}</span>
             </div>
             <div className="ide-panel-body">
               <textarea
@@ -835,7 +970,7 @@ export default function RoomPage() {
                 </div>
               ) : (
                 <div className="empty-state">
-                  <div className="empty-state-icon">▶️</div>
+                  <div className="empty-state-icon">▶</div>
                   <div className="empty-state-title">Live Preview</div>
                   <div className="empty-state-desc">Click "Run" to start the dev server and see your app live.</div>
                 </div>
@@ -844,7 +979,7 @@ export default function RoomPage() {
           </div>
 
           {/* Right Panel */}
-          <div className="resize-handle" onMouseDown={(e) => handleResizeStart(e, "right")} style={{ position: "absolute", right: rightPanelWidth, top: 0, bottom: 0, zIndex: 10 }} />
+          <div className="resize-handle" onMouseDown={(e) => handleResizeStart(e, "right")} onDoubleClick={() => handleResizeReset("right")} style={{ position: "absolute", right: rightPanelWidth, top: 0, bottom: 0, zIndex: 10 }} />
           <div className="ide-right-panel" style={{ width: rightPanelWidth }}>
             <div className="ide-right-tabs">
               <button className={`ide-right-tab ${rightTab === "ai" ? "active" : ""}`} onClick={() => setRightTab("ai")}>AI Assistant</button>
@@ -863,7 +998,6 @@ export default function RoomPage() {
                     setAiProvider(agent.defaultProvider as any);
                     setAiModel(agent.defaultModel);
                   }}
-                  style={{ borderColor: agent.color, color: selectedAgent === agent.id ? "white" : agent.color }}
                   title={`${agent.name} — ${agent.description}`}
                 >
                   {agent.icon} {agent.name}
@@ -879,7 +1013,7 @@ export default function RoomPage() {
                   <button className="btn btn-ghost btn-sm" onClick={() => setShowMemoryPanel(false)}>✕</button>
                 </div>
                 {agentMemories.length === 0 ? (
-                  <div style={{ fontSize: "var(--font-size-xs)", color: "var(--text-tertiary)", textAlign: "center", padding: "var(--space-lg)" }}>
+                  <div style={{ fontSize: "var(--font-size-xs)", color: "var(--text-muted)", textAlign: "center", padding: "var(--space-lg)" }}>
                     No memories yet. Chat with agents to build memory.
                   </div>
                 ) : (
@@ -890,16 +1024,16 @@ export default function RoomPage() {
                         <div key={mem.id} style={{ padding: "var(--space-sm)", background: "var(--bg-primary)", borderRadius: "var(--radius-sm)", border: "1px solid var(--border-primary)", fontSize: "var(--font-size-xs)" }}>
                           <div style={{ display: "flex", alignItems: "center", gap: "var(--space-xs)", marginBottom: "var(--space-xs)" }}>
                             <span style={{ fontSize: "var(--font-size-sm)" }}>{config.icon}</span>
-                            <span style={{ fontWeight: 600, color: config.color }}>{config.name}</span>
-                            <span className="badge" style={{ background: config.color, fontSize: "8px", padding: "1px 6px", borderRadius: "var(--radius-sm)" }}>{mem.memory_type}</span>
-                            <span style={{ marginLeft: "auto", color: "var(--text-tertiary)" }}>
+                            <span style={{ fontWeight: 600, color: "var(--primary)" }}>{config.name}</span>
+                            <span className="badge badge-coral" style={{ fontSize: "8px", padding: "1px 6px" }}>{mem.memory_type}</span>
+                            <span style={{ marginLeft: "auto", color: "var(--text-muted)" }}>
                               {'★'.repeat(mem.importance)}{'☆'.repeat(10 - mem.importance)}
                             </span>
                           </div>
                           <div style={{ color: "var(--text-secondary)", whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
                             {mem.content.slice(0, 200)}{mem.content.length > 200 ? "..." : ""}
                           </div>
-                          <div style={{ marginTop: "var(--space-xs)", fontSize: "10px", color: "var(--text-tertiary)" }}>
+                          <div style={{ marginTop: "var(--space-xs)", fontSize: "10px", color: "var(--text-muted)" }}>
                             {new Date(mem.created_at).toLocaleString()}
                           </div>
                         </div>
@@ -922,12 +1056,12 @@ export default function RoomPage() {
                     <div style={{ fontSize: "var(--font-size-xs)", fontWeight: 600, marginBottom: "var(--space-sm)", color: "var(--text-secondary)" }}>API Configuration</div>
                     <div style={{ display: "flex", gap: "var(--space-sm)", marginBottom: "var(--space-sm)" }}>
                       <select value={aiProvider} onChange={(e) => setAiProvider(e.target.value as any)} className="api-select">
-                        <option value="openai">🟢 OpenAI</option>
-                        <option value="anthropic">🟠 Anthropic</option>
-                        <option value="google">🔵 Google</option>
-                        <option value="groq">⚡ Groq</option>
-                        <option value="openrouter">🌐 OpenRouter</option>
-                        <option value="nvidia">🟩 NVIDIA</option>
+                        <option value="openai">OpenAI</option>
+                        <option value="anthropic">Anthropic</option>
+                        <option value="google">Google</option>
+                        <option value="groq">Groq</option>
+                        <option value="openrouter">OpenRouter</option>
+                        <option value="nvidia">NVIDIA</option>
                       </select>
                       <input type="text" placeholder="Model" value={aiModel} onChange={(e) => setAiModel(e.target.value)} className="api-input" />
                     </div>
@@ -998,7 +1132,7 @@ export default function RoomPage() {
                 <div className="ai-messages">
                   {aiMessages.length === 0 && (
                     <div className="empty-state">
-                      <div className="empty-state-icon">🤖</div>
+                      <div className="empty-state-icon">✦</div>
                       <div className="empty-state-title">AI Assistant</div>
                       <div className="empty-state-desc">Ask the AI to write, refactor, or explain code.</div>
                     </div>
@@ -1140,6 +1274,16 @@ export default function RoomPage() {
             setShowSettings(false);
             showToast("Settings saved!", "success");
           }}
+        />
+      )}
+
+      {/* Delete Popover */}
+      {deleteTarget && (
+        <DeletePopover
+          filename={deleteTarget.path}
+          anchorRect={deleteTarget.rect}
+          onConfirm={confirmDelete}
+          onCancel={() => setDeleteTarget(null)}
         />
       )}
     </div>

@@ -1,5 +1,5 @@
-// Tailwind CSS v4 config — uses CSS-based configuration
-// See: https://tailwindcss.com/docs/v4-configuration
+// Tailwind CSS v4 config — Claude Design System
+// Warm cream canvas + coral accents + dark navy surfaces
 const config = {
   content: [
     "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
@@ -9,6 +9,11 @@ const config = {
   theme: {
     extend: {
       colors: {
+        primary: {
+          DEFAULT: "var(--primary)",
+          active: "var(--primary-active)",
+          disabled: "var(--primary-disabled)",
+        },
         bg: {
           primary: "var(--bg-primary)",
           secondary: "var(--bg-secondary)",
@@ -16,27 +21,34 @@ const config = {
           elevated: "var(--bg-elevated)",
           hover: "var(--bg-hover)",
         },
+        surface: {
+          dark: "var(--surface-dark)",
+          "dark-elevated": "var(--surface-dark-elevated)",
+          "dark-soft": "var(--surface-dark-soft)",
+        },
         text: {
           primary: "var(--text-primary)",
           secondary: "var(--text-secondary)",
-          tertiary: "var(--text-tertiary)",
+          strong: "var(--text-strong)",
+          muted: "var(--text-muted)",
+          "muted-soft": "var(--text-muted-soft)",
           inverse: "var(--text-inverse)",
+          "on-dark": "var(--text-on-dark)",
+          "on-dark-soft": "var(--text-on-dark-soft)",
         },
         border: {
           DEFAULT: "var(--border-primary)",
           secondary: "var(--border-secondary)",
           accent: "var(--border-accent)",
         },
-        accent: {
-          DEFAULT: "var(--accent)",
-          blue: "var(--accent-blue)",
-          green: "var(--accent-green)",
-          red: "var(--accent-red)",
-          orange: "var(--accent-orange)",
-          purple: "var(--accent-purple)",
-        },
+        success: "var(--success)",
+        warning: "var(--warning)",
+        error: "var(--error)",
+        teal: "var(--accent-teal)",
+        amber: "var(--accent-amber)",
       },
       fontFamily: {
+        serif: ["var(--font-serif)"],
         sans: ["var(--font-sans)"],
         mono: ["var(--font-mono)"],
       },
@@ -57,8 +69,10 @@ const config = {
         xl: "var(--space-xl)",
         "2xl": "var(--space-2xl)",
         "3xl": "var(--space-3xl)",
+        section: "var(--spacing-section)",
       },
       borderRadius: {
+        xs: "var(--radius-xs)",
         sm: "var(--radius-sm)",
         md: "var(--radius-md)",
         lg: "var(--radius-lg)",

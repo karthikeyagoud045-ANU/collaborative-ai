@@ -127,7 +127,14 @@ export async function GET(req: NextRequest): Promise<NextResponse<ModelsResponse
         });
         if (res.ok) {
           const data = await res.json();
-          const models = data.data?.map((m: any) => m.id).slice(0, 30);
+          // Return structured model info for the ModelPicker
+          const models = data.data?.map((m: any) => ({
+            id: m.id,
+            name: m.name || m.id.split("/").pop() || m.id,
+            provider: m.id.split("/")[0] || "other",
+            context_length: m.context_length,
+            pricing: m.pricing ? `$${(m.pricing.prompt * 1000000).toFixed(2)}/M` : undefined,
+          })).slice(0, 100);
           return NextResponse.json({ success: true, models: models || PROVIDER_MODELS.openrouter });
         }
         break;

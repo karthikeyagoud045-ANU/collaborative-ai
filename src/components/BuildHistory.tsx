@@ -139,7 +139,7 @@ export function BuildHistory({ roomId, onSelectVersion }: BuildHistoryProps) {
                     color: "var(--text-muted)",
                     marginTop: "2px"
                   }}>
-                    {new Date(build.created_at).toLocaleString()}
+                    {new Date(build.createdAt).toLocaleString()}
                   </div>
                 </div>
               </div>

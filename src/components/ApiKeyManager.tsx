@@ -1,21 +1,21 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { KeyPoolManager, type KeyPoolEntry } from "@/lib/key-pool";
 
 const PROVIDERS = [
-  { id: "openai", name: "OpenAI", icon: "🟢", placeholder: "sk-..." },
-  { id: "anthropic", name: "Anthropic", icon: "🟠", placeholder: "sk-ant-..." },
-  { id: "google", name: "Google", icon: "🔵", placeholder: "AIza..." },
-  { id: "groq", name: "Groq", icon: "⚡", placeholder: "gsk_..." },
-  { id: "openrouter", name: "OpenRouter", icon: "🌐", placeholder: "sk-or-..." },
-  { id: "nvidia", name: "NVIDIA", icon: "🟩", placeholder: "nvapi-..." },
+  { id: "openai", name: "OpenAI", placeholder: "sk-..." },
+  { id: "anthropic", name: "Anthropic", placeholder: "sk-ant-..." },
+  { id: "google", name: "Google", placeholder: "AIza..." },
+  { id: "groq", name: "Groq", placeholder: "gsk_..." },
+  { id: "openrouter", name: "OpenRouter", placeholder: "sk-or-..." },
+  { id: "nvidia", name: "NVIDIA", placeholder: "nvapi-..." },
 ];
 
 export function ApiKeyManager() {
   const [keys, setKeys] = useState<KeyPoolEntry[]>([]);
   const [showAdd, setShowAdd] = useState(false);
-  const [selectedProvider, setSelectedProvider] = useState("openai");
+  const [selectedProvider, setSelectedProvider] = useState("openrouter");
   const [newKeyValue, setNewKeyValue] = useState("");
   const [newKeyLabel, setNewKeyLabel] = useState("");
   const [loading, setLoading] = useState(false);
@@ -34,30 +34,25 @@ export function ApiKeyManager() {
 
   useEffect(() => { loadKeys(); }, []);
 
-  const handleAdd = async () => {
-    if (!newKeyValue.trim()) return;
-    setLoading(true);
-    const res = await manager.addKey({
-      provider: selectedProvider,
-      keyValue: newKeyValue.trim(),
-      label: newKeyLabel || undefined,
-    });
-    if (res.success) {
-      setMsg("Key added!");
-      setNewKeyValue("");
-      setNewKeyLabel("");
-      setShowAdd(false);
-      await loadKeys();
-      // Fetch models for this provider with the new key
-      fetchModels(selectedProvider, newKeyValue.trim());
-    } else {
-      setMsg(res.error || "Failed to add key");
-    }
-    setLoading(false);
-    setTimeout(() => setMsg(""), 3000);
-  };
+  const detectProvider = useCallback((keyVal: string) => {
+    if (keyVal.startsWith("sk-or-")) return "openrouter";
+    if (keyVal.startsWith("sk-ant-")) return "anthropic";
+    if (keyVal.startsWith("gsk_")) return "groq";
+    if (keyVal.startsWith("AIza")) return "google";
+    if (keyVal.startsWith("nvapi-")) return "nvidia";
+    if (keyVal.startsWith("sk-")) return "openai";
+    return null;
+  }, []);
 
-  const fetchModels = async (provider: string, apiKey: string) => {
+  const handleKeyInputChange = useCallback((value: string) => {
+    setNewKeyValue(value);
+    const detected = detectProvider(value);
+    if (detected) {
+      setSelectedProvider(detected);
+    }
+  }, [detectProvider]);
+
+  const fetchModels = useCallback(async (provider: string, apiKey: string) => {
     setFetchingModels(prev => ({ ...prev, [provider]: true }));
     try {
       const res = await fetch(`/api/models?provider=${provider}&apiKey=${encodeURIComponent(apiKey)}`);
@@ -69,11 +64,33 @@ export function ApiKeyManager() {
       console.error("Failed to fetch models:", err);
     }
     setFetchingModels(prev => ({ ...prev, [provider]: false }));
+  }, []);
+
+  const handleAdd = async () => {
+    if (!newKeyValue.trim()) return;
+    setLoading(true);
+    const res = await manager.addKey({
+      provider: selectedProvider,
+      keyValue: newKeyValue.trim(),
+      label: newKeyLabel || undefined,
+    });
+    if (res.success) {
+      setMsg("Key added successfully!");
+      setNewKeyValue("");
+      setNewKeyLabel("");
+      setShowAdd(false);
+      await loadKeys();
+      // Auto-fetch models for this provider
+      fetchModels(selectedProvider, newKeyValue.trim());
+    } else {
+      setMsg(res.error || "Failed to add key");
+    }
+    setLoading(false);
+    setTimeout(() => setMsg(""), 3000);
   };
 
   const handleModelSelect = (keyId: string, model: string) => {
     setSelectedModels(prev => ({ ...prev, [keyId]: model }));
-    // Store in localStorage for persistence across sessions
     const storageKey = `selected_model_${keyId}`;
     localStorage.setItem(storageKey, model);
   };
@@ -93,8 +110,13 @@ export function ApiKeyManager() {
     await loadKeys();
   };
 
-  const toggleExpand = (keyId: string) => {
-    setExpandedKeys(prev => ({ ...prev, [keyId]: !prev[keyId] }));
+  const toggleExpand = async (keyId: string, provider: string, keyValue: string) => {
+    const isExpanding = !expandedKeys[keyId];
+    setExpandedKeys(prev => ({ ...prev, [keyId]: isExpanding }));
+    // Auto-fetch models when expanding if not already fetched
+    if (isExpanding && !availableModels[provider]) {
+      fetchModels(provider, keyValue);
+    }
   };
 
   const grouped = PROVIDERS.map((p) => ({
@@ -103,28 +125,24 @@ export function ApiKeyManager() {
   }));
 
   return (
-    <div className="api-key-manager" style={{
-      padding: "var(--space-xl)",
-      maxWidth: 720,
-      margin: "0 auto",
-    }}>
+    <div className="api-key-manager">
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "var(--space-xl)" }}>
         <div>
-          <h2 style={{ 
+          <h3 style={{
             fontFamily: "var(--font-serif)",
-            fontSize: "var(--font-size-2xl)", 
+            fontSize: "var(--font-size-2xl)",
             fontWeight: 400,
             letterSpacing: "-0.01em",
             color: "var(--text-primary)",
-            margin: 0 
+            margin: 0
           }}>
-            🔑 API Keys
-          </h2>
-          <p style={{ 
-            fontSize: "var(--font-size-sm)", 
-            color: "var(--text-muted)", 
-            marginTop: "var(--space-xs)" 
+            API Keys
+          </h3>
+          <p style={{
+            fontSize: "var(--font-size-sm)",
+            color: "var(--text-muted)",
+            marginTop: "var(--space-xs)"
           }}>
             Add multiple keys per provider. Requests use round-robin rotation.
           </p>
@@ -146,13 +164,16 @@ export function ApiKeyManager() {
           flexDirection: "column",
           gap: "var(--space-md)",
         }}>
+          <div style={{ fontSize: "var(--font-size-xs)", fontWeight: 600, color: "var(--text-secondary)", marginBottom: "var(--space-xs)" }}>
+            Select Provider
+          </div>
           <div style={{ display: "flex", gap: "var(--space-sm)", flexWrap: "wrap" }}>
             {PROVIDERS.map((p) => (
               <button
                 key={p.id}
                 onClick={() => setSelectedProvider(p.id)}
                 style={{
-                  padding: "6px 12px",
+                  padding: "8px 16px",
                   borderRadius: "var(--radius-full)",
                   border: selectedProvider === p.id ? "2px solid var(--primary)" : "1px solid var(--border-primary)",
                   background: selectedProvider === p.id ? "var(--primary)" : "var(--bg-primary)",
@@ -163,41 +184,69 @@ export function ApiKeyManager() {
                   transition: "all var(--transition-fast)",
                 }}
               >
-                {p.icon} {p.name}
+                {p.name}
               </button>
             ))}
           </div>
-          <input
-            type="password"
-            placeholder={PROVIDERS.find((p) => p.id === selectedProvider)?.placeholder || "Enter API key..."}
-            value={newKeyValue}
-            onChange={(e) => setNewKeyValue(e.target.value)}
-            style={{
-              padding: "var(--space-md)",
+          <div>
+            <div style={{ fontSize: "var(--font-size-xs)", fontWeight: 500, color: "var(--text-secondary)", marginBottom: "var(--space-xs)" }}>
+              API Key
+            </div>
+            <input
+              type="password"
+              placeholder={PROVIDERS.find((p) => p.id === selectedProvider)?.placeholder || "Enter API key..."}
+              value={newKeyValue}
+              onChange={(e) => handleKeyInputChange(e.target.value)}
+              style={{
+                padding: "var(--space-md)",
+                borderRadius: "var(--radius-md)",
+                border: "1px solid var(--border-primary)",
+                background: "var(--bg-primary)",
+                color: "var(--text-primary)",
+                fontFamily: "var(--font-mono)",
+                fontSize: "var(--font-size-sm)",
+                outline: "none",
+              }}
+            />
+          </div>
+          <div>
+            <div style={{ fontSize: "var(--font-size-xs)", fontWeight: 500, color: "var(--text-secondary)", marginBottom: "var(--space-xs)" }}>
+              Label (optional)
+            </div>
+            <input
+              type="text"
+              placeholder="e.g. 'My OpenRouter Key #1'"
+              value={newKeyLabel}
+              onChange={(e) => setNewKeyLabel(e.target.value)}
+              style={{
+                padding: "var(--space-md)",
+                borderRadius: "var(--radius-md)",
+                border: "1px solid var(--border-primary)",
+                background: "var(--bg-primary)",
+                color: "var(--text-primary)",
+                fontSize: "var(--font-size-sm)",
+                outline: "none",
+              }}
+            />
+          </div>
+
+          {/* Auto-fetch models hint */}
+          {newKeyValue && detectProvider(newKeyValue) && (
+            <div style={{
+              padding: "var(--space-sm) var(--space-md)",
+              background: "rgba(204, 120, 92, 0.06)",
               borderRadius: "var(--radius-md)",
-              border: "1px solid var(--border-primary)",
-              background: "var(--bg-primary)",
-              color: "var(--text-primary)",
-              fontFamily: "var(--font-mono)",
-              fontSize: "var(--font-size-sm)",
-              outline: "none",
-            }}
-          />
-          <input
-            type="text"
-            placeholder="Label (optional, e.g. 'My OpenAI Key #1')"
-            value={newKeyLabel}
-            onChange={(e) => setNewKeyLabel(e.target.value)}
-            style={{
-              padding: "var(--space-md)",
-              borderRadius: "var(--radius-md)",
-              border: "1px solid var(--border-primary)",
-              background: "var(--bg-primary)",
-              color: "var(--text-primary)",
-              fontSize: "var(--font-size-sm)",
-              outline: "none",
-            }}
-          />
+              fontSize: "var(--font-size-xs)",
+              color: "var(--primary)",
+              display: "flex",
+              alignItems: "center",
+              gap: "var(--space-sm)",
+            }}>
+              <span>✦</span>
+              Provider detected: <strong>{PROVIDERS.find(p => p.id === detectProvider(newKeyValue))?.name}</strong> — Available models will be fetched automatically after adding.
+            </div>
+          )}
+
           <div style={{ display: "flex", gap: "var(--space-sm)" }}>
             <button onClick={handleAdd} disabled={loading || !newKeyValue.trim()} className="btn btn-primary">
               {loading ? "Adding..." : "Add Key"}
@@ -211,10 +260,11 @@ export function ApiKeyManager() {
         <div style={{
           padding: "var(--space-sm) var(--space-md)",
           borderRadius: "var(--radius-md)",
-          background: msg.includes("added") ? "rgba(93,184,114,0.1)" : "rgba(198,69,69,0.1)",
-          color: msg.includes("added") ? "var(--success)" : "var(--error)",
+          background: msg.includes("success") ? "rgba(93,184,114,0.1)" : "rgba(198,69,69,0.1)",
+          color: msg.includes("success") ? "var(--success)" : "var(--error)",
           fontSize: "var(--font-size-sm)",
           marginBottom: "var(--space-md)",
+          border: `1px solid ${msg.includes("success") ? "rgba(93,184,114,0.2)" : "rgba(198,69,69,0.2)"}`,
         }}>
           {msg}
         </div>
@@ -227,8 +277,12 @@ export function ApiKeyManager() {
             padding: "var(--space-lg)",
           }}>
             <div style={{ display: "flex", alignItems: "center", gap: "var(--space-sm)", marginBottom: provider.keys.length > 0 ? "var(--space-md)" : 0 }}>
-              <span style={{ fontSize: "var(--font-size-lg)" }}>{provider.icon}</span>
-              <span style={{ fontWeight: 500, color: "var(--text-primary)" }}>{provider.name}</span>
+              <span style={{
+                width: 8, height: 8, borderRadius: "50%",
+                background: provider.keys.length > 0 ? "var(--success)" : "var(--border-primary)",
+                flexShrink: 0,
+              }} />
+              <span style={{ fontWeight: 500, color: "var(--text-primary)", fontSize: "var(--font-size-sm)" }}>{provider.name}</span>
               <span style={{
                 padding: "2px 8px",
                 borderRadius: "var(--radius-full)",
@@ -244,146 +298,146 @@ export function ApiKeyManager() {
               <p style={{ fontSize: "var(--font-size-xs)", color: "var(--text-muted)" }}>No keys added yet</p>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-sm)" }}>
-                {provider.keys.map((key) => (
-                  <div key={key.id} style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "var(--space-sm)",
-                    padding: "var(--space-md)",
-                    borderRadius: "var(--radius-md)",
-                    background: "var(--bg-secondary)",
-                    border: "1px solid var(--border-primary)",
-                  }}>
-                    <div style={{
+                {provider.keys.map((key) => {
+                  const currentModel = selectedModels[key.id] || loadSelectedModel(key.id);
+                  return (
+                    <div key={key.id} style={{
                       display: "flex",
-                      alignItems: "center",
+                      flexDirection: "column",
                       gap: "var(--space-sm)",
+                      padding: "var(--space-md)",
+                      borderRadius: "var(--radius-md)",
+                      background: "var(--bg-secondary)",
+                      border: "1px solid var(--border-primary)",
                     }}>
                       <div style={{
-                        width: 8,
-                        height: 8,
-                        borderRadius: "50%",
-                        background: key.isActive ? "var(--success)" : "var(--text-muted)",
-                        flexShrink: 0,
-                      }} />
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: "var(--font-size-sm)", color: "var(--text-primary)", fontFamily: "var(--font-mono)" }}>
-                          {key.keyValue}
-                        </div>
-                        {key.keyLabel && (
-                          <div style={{ fontSize: "10px", color: "var(--text-muted)" }}>{key.keyLabel}</div>
-                        )}
-                      </div>
-                      <div style={{ fontSize: "10px", color: "var(--text-muted)", whiteSpace: "nowrap" }}>
-                        {key.totalRequests} reqs
-                      </div>
-                      <button
-                        onClick={() => handleToggle(key.id)}
-                        style={{
-                          padding: "4px 10px",
-                          borderRadius: "var(--radius-full)",
-                          border: "none",
-                          fontSize: "10px",
-                          fontWeight: 600,
-                          cursor: "pointer",
-                          background: key.isActive ? "rgba(198,69,69,0.1)" : "rgba(93,184,114,0.1)",
-                          color: key.isActive ? "var(--error)" : "var(--success)",
-                        }}
-                      >
-                        {key.isActive ? "Disable" : "Enable"}
-                      </button>
-                      <button
-                        onClick={() => handleDelete(key.id)}
-                        style={{
-                          padding: "4px 6px",
-                          background: "none",
-                          border: "none",
-                          cursor: "pointer",
-                          color: "var(--text-muted)",
-                          fontSize: "14px",
-                        }}
-                      >
-                        ✕
-                      </button>
-                      <button
-                        onClick={() => toggleExpand(key.id)}
-                        style={{
-                          padding: "4px 8px",
-                          background: "var(--bg-primary)",
-                          border: "1px solid var(--border-primary)",
-                          borderRadius: "var(--radius-sm)",
-                          cursor: "pointer",
-                          color: "var(--text-secondary)",
-                          fontSize: "10px",
-                        }}
-                      >
-                        {expandedKeys[key.id] ? "▲" : "▼"} Models
-                      </button>
-                    </div>
-                    
-                    {/* Expanded Model Selection */}
-                    {expandedKeys[key.id] && (
-                      <div style={{
-                        padding: "var(--space-md)",
-                        background: "var(--bg-primary)",
-                        borderRadius: "var(--radius-md)",
-                        border: "1px solid var(--border-primary)",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "var(--space-sm)",
                       }}>
-                        {fetchingModels[provider.id] ? (
-                          <div style={{ fontSize: "var(--font-size-xs)", color: "var(--text-muted)" }}>
-                            Fetching available models...
+                        <div style={{
+                          width: 8,
+                          height: 8,
+                          borderRadius: "50%",
+                          background: key.isActive ? "var(--success)" : "var(--text-muted)",
+                          flexShrink: 0,
+                        }} />
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: "var(--font-size-sm)", color: "var(--text-primary)", fontFamily: "var(--font-mono)" }}>
+                            {key.keyValue}
                           </div>
-                        ) : availableModels[provider.id] ? (
-                          <div>
-                            <div style={{ fontSize: "var(--font-size-xs)", fontWeight: 500, color: "var(--text-secondary)", marginBottom: "var(--space-sm)" }}>
-                              Select Model for this Key:
+                          {key.keyLabel && (
+                            <div style={{ fontSize: "10px", color: "var(--text-muted)" }}>{key.keyLabel}</div>
+                          )}
+                          {currentModel && (
+                            <div style={{ fontSize: "10px", color: "var(--primary)", fontFamily: "var(--font-mono)", marginTop: 2 }}>
+                              Model: {currentModel}
                             </div>
-                            <select
-                              value={selectedModels[key.id] || loadSelectedModel(key.id) || ""}
-                              onChange={(e) => handleModelSelect(key.id, e.target.value)}
-                              style={{
-                                width: "100%",
-                                padding: "var(--space-sm)",
-                                borderRadius: "var(--radius-md)",
-                                border: "1px solid var(--border-primary)",
-                                background: "var(--bg-primary)",
-                                color: "var(--text-primary)",
-                                fontSize: "var(--font-size-sm)",
-                                fontFamily: "var(--font-mono)",
-                                outline: "none",
-                                cursor: "pointer",
-                              }}
-                            >
-                              <option value="">-- Choose a model --</option>
-                              {availableModels[provider.id].map((model) => (
-                                <option key={model} value={model}>
-                                  {model}
-                                </option>
-                              ))}
-                            </select>
-                            {selectedModels[key.id] || loadSelectedModel(key.id) ? (
-                              <div style={{ 
-                                marginTop: "var(--space-sm)", 
-                                fontSize: "var(--font-size-xs)", 
-                                color: "var(--success)" 
-                              }}>
-                                ✓ Selected: <strong style={{ fontFamily: "var(--font-mono)" }}>{selectedModels[key.id] || loadSelectedModel(key.id)}</strong>
-                              </div>
-                            ) : null}
-                          </div>
-                        ) : (
-                          <button
-                            onClick={() => fetchModels(provider.id, key.keyValue.replace("...", ""))}
-                            className="btn btn-primary btn-sm"
-                            style={{ fontSize: "var(--font-size-xs)" }}
-                          >
-                            🔄 Fetch Available Models
-                          </button>
-                        )}
+                          )}
+                        </div>
+                        <div style={{ fontSize: "10px", color: "var(--text-muted)", whiteSpace: "nowrap" }}>
+                          {key.totalRequests} reqs
+                        </div>
+                        <button
+                          onClick={() => handleToggle(key.id)}
+                          style={{
+                            padding: "4px 10px",
+                            borderRadius: "var(--radius-full)",
+                            border: "none",
+                            fontSize: "10px",
+                            fontWeight: 600,
+                            cursor: "pointer",
+                            background: key.isActive ? "rgba(198,69,69,0.1)" : "rgba(93,184,114,0.1)",
+                            color: key.isActive ? "var(--error)" : "var(--success)",
+                            transition: "all var(--transition-fast)",
+                          }}
+                        >
+                          {key.isActive ? "Disable" : "Enable"}
+                        </button>
+                        <button
+                          onClick={() => toggleExpand(key.id, provider.id, key.keyValue)}
+                          style={{
+                            padding: "4px 8px",
+                            background: "var(--bg-primary)",
+                            border: "1px solid var(--border-primary)",
+                            borderRadius: "var(--radius-sm)",
+                            cursor: "pointer",
+                            color: "var(--text-secondary)",
+                            fontSize: "10px",
+                            transition: "all var(--transition-fast)",
+                          }}
+                        >
+                          {expandedKeys[key.id] ? "▲" : "▼"} Models
+                        </button>
+                        <button
+                          onClick={() => handleDelete(key.id)}
+                          className="file-delete-btn"
+                          style={{ opacity: 1 }}
+                          title="Delete key"
+                        >
+                          ✕
+                        </button>
                       </div>
-                    )}
-                  </div>
-                ))}
+
+                      {/* Expanded Model Selection — LLM Discovery */}
+                      {expandedKeys[key.id] && (
+                        <div style={{
+                          padding: "var(--space-md)",
+                          background: "var(--bg-primary)",
+                          borderRadius: "var(--radius-md)",
+                          border: "1px solid var(--border-primary)",
+                        }}>
+                          {fetchingModels[provider.id] ? (
+                            <div style={{ fontSize: "var(--font-size-xs)", color: "var(--text-muted)", display: "flex", alignItems: "center", gap: "var(--space-sm)" }}>
+                              <div className="animate-spin" style={{ width: 14, height: 14, border: "2px solid var(--border-primary)", borderTopColor: "var(--primary)", borderRadius: "50%" }} />
+                              Fetching available models from {provider.name}...
+                            </div>
+                          ) : availableModels[provider.id] ? (
+                            <div>
+                              <div style={{ fontSize: "var(--font-size-xs)", fontWeight: 600, color: "var(--text-secondary)", marginBottom: "var(--space-sm)" }}>
+                                Available Models ({availableModels[provider.id].length})
+                              </div>
+                              <div className="model-chips">
+                                {availableModels[provider.id].map((model) => (
+                                  <button
+                                    key={model}
+                                    className={`model-chip ${(selectedModels[key.id] || loadSelectedModel(key.id)) === model ? "selected" : ""}`}
+                                    onClick={() => handleModelSelect(key.id, model)}
+                                  >
+                                    {model}
+                                  </button>
+                                ))}
+                              </div>
+                              {(selectedModels[key.id] || loadSelectedModel(key.id)) && (
+                                <div style={{
+                                  marginTop: "var(--space-sm)",
+                                  padding: "var(--space-xs) var(--space-sm)",
+                                  background: "rgba(93,184,114,0.06)",
+                                  borderRadius: "var(--radius-sm)",
+                                  fontSize: "var(--font-size-xs)",
+                                  color: "var(--success)",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: "var(--space-xs)",
+                                }}>
+                                  ✓ Selected: <strong style={{ fontFamily: "var(--font-mono)" }}>{selectedModels[key.id] || loadSelectedModel(key.id)}</strong>
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => fetchModels(provider.id, key.keyValue)}
+                              className="btn btn-secondary btn-sm"
+                              style={{ fontSize: "var(--font-size-xs)" }}
+                            >
+                              Fetch Available Models
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>

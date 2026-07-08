@@ -30,106 +30,93 @@ export default function DashboardPage() {
 
   return (
     <div className="dashboard-page" style={{ background: "var(--bg-primary)", minHeight: "100vh" }}>
-      {/* Top Navigation */}
-      <header style={{ 
-        position: "relative", 
-        zIndex: 2, 
-        background: "var(--bg-primary)", 
-        borderBottom: "1px solid var(--border-primary)", 
-        padding: "var(--space-md) var(--space-xl)",
-        display: "flex", 
-        alignItems: "center", 
-        justifyContent: "space-between" 
+      {/* Top Navigation — Claude cream nav */}
+      <header style={{
+        position: "relative",
+        zIndex: 2,
+        background: "rgba(250, 249, 245, 0.92)",
+        backdropFilter: "blur(12px)",
+        WebkitBackdropFilter: "blur(12px)",
+        borderBottom: "1px solid var(--border-primary)",
+        padding: "0 var(--space-2xl)",
+        height: 64,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
       }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "var(--space-md)" }}>
-          <span style={{ fontSize: "var(--font-size-2xl)" }}>⚡</span>
-          <span style={{ 
+        <div style={{ display: "flex", alignItems: "center", gap: "var(--space-sm)" }}>
+          <div style={{
+            width: 28, height: 28, borderRadius: "var(--radius-md)",
+            background: "var(--primary)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 14, color: "#fff",
+          }}>⚡</div>
+          <span style={{
             fontFamily: "var(--font-serif)",
-            fontSize: "var(--font-size-xl)", 
+            fontSize: "1.1rem",
             fontWeight: 400,
-            letterSpacing: "-0.01em",
-            color: "var(--text-primary)" 
+            letterSpacing: "-0.02em",
+            color: "var(--text-primary)"
           }}>Ultimate Vibe Coder</span>
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: "var(--space-lg)" }}>
-          <nav style={{ display: "flex", gap: "var(--space-md)" }}>
-            <a href="/dashboard" style={{ 
+        <div style={{ display: "flex", alignItems: "center", gap: "var(--space-xl)" }}>
+          <nav style={{ display: "flex", gap: "var(--space-lg)" }}>
+            <a href="/dashboard" style={{
               fontFamily: "var(--font-sans)",
-              fontSize: "var(--font-size-sm)", 
+              fontSize: "var(--font-size-sm)",
               fontWeight: 500,
               color: "var(--text-primary)",
               textDecoration: "none"
             }}>Dashboard</a>
-            <a href="/templates" style={{ 
+            <a href="/templates" style={{
               fontFamily: "var(--font-sans)",
-              fontSize: "var(--font-size-sm)", 
+              fontSize: "var(--font-size-sm)",
               fontWeight: 500,
               color: "var(--text-muted)",
               textDecoration: "none"
             }}>Templates</a>
           </nav>
-          
+
           <div style={{ position: "relative" }}>
             <button
-              style={{ 
-                background: "transparent", 
-                border: "none", 
-                cursor: "pointer", 
-                display: "flex", 
-                alignItems: "center", 
-                gap: "var(--space-sm)" 
+              style={{
+                background: "transparent",
+                border: "none",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: "var(--space-sm)",
+                padding: "4px 8px",
+                borderRadius: "var(--radius-md)",
+                transition: "background 0.15s",
               }}
               onClick={() => setShowUserMenu(!showUserMenu)}
             >
               <img
                 src={user.user_metadata?.avatar_url || `https://api.dicebear.com/9.x/bottts-neutral/svg?seed=${user.id}`}
                 alt={user.user_metadata?.name || "User"}
-                style={{ 
-                  border: "1px solid var(--border-primary)", 
-                  borderRadius: "var(--radius-full)", 
-                  width: 32, 
-                  height: 32 
+                style={{
+                  border: "1px solid var(--border-primary)",
+                  borderRadius: "var(--radius-full)",
+                  width: 32,
+                  height: 32
                 }}
               />
-              <span style={{ 
+              <span style={{
                 fontFamily: "var(--font-sans)",
-                fontSize: "var(--font-size-sm)", 
+                fontSize: "var(--font-size-sm)",
                 fontWeight: 500,
-                color: "var(--text-primary)" 
+                color: "var(--text-primary)"
               }}>{user.user_metadata?.name || user.email?.split("@")[0] || "User"}</span>
             </button>
 
             {showUserMenu && (
-              <div style={{ 
-                background: "var(--bg-elevated)", 
-                padding: "var(--space-md)", 
-                border: "1px solid var(--border-primary)", 
-                borderRadius: "var(--radius-lg)", 
-                position: "absolute", 
-                top: "100%", 
-                right: 0, 
-                marginTop: "var(--space-sm)", 
-                minWidth: 200,
-                boxShadow: "var(--shadow-md)"
-              }}>
-                <div style={{ fontSize: "var(--font-size-xs)", color: "var(--text-muted)", padding: "var(--space-xs)" }}>{user.email}</div>
-                <div style={{ borderBottom: "1px solid var(--border-primary)", margin: "var(--space-sm) 0" }}></div>
-                <button
-                  style={{ 
-                    background: "transparent", 
-                    border: "none", 
-                    padding: "var(--space-sm)", 
-                    cursor: "pointer", 
-                    width: "100%", 
-                    textAlign: "left",
-                    fontFamily: "var(--font-sans)",
-                    fontSize: "var(--font-size-sm)",
-                    color: "var(--text-primary)"
-                  }}
-                  onClick={() => signOut()}
-                >
-                  🔤 Sign Out
+              <div className="user-menu-dropdown">
+                <div style={{ fontSize: "var(--font-size-xs)", color: "var(--text-muted)", padding: "var(--space-xs) var(--space-sm)" }}>{user.email}</div>
+                <div style={{ borderBottom: "1px solid var(--border-primary)", margin: "var(--space-xs) 0" }}></div>
+                <button className="user-menu-item" onClick={() => signOut()}>
+                  Sign Out
                 </button>
               </div>
             )}
@@ -138,109 +125,127 @@ export default function DashboardPage() {
       </header>
 
       {/* Main Content */}
-      <main style={{ padding: "var(--spacing-section) var(--space-xl)", maxWidth: 1200, margin: "0 auto" }}>
-        {/* Welcome Section */}
+      <main style={{ padding: "var(--spacing-section) var(--space-2xl)", maxWidth: 1100, margin: "0 auto" }}>
+        {/* Welcome Section — Serif headline */}
         <div style={{ marginBottom: "var(--spacing-section)" }}>
-          <h1 style={{ 
+          <h1 style={{
             fontFamily: "var(--font-serif)",
-            fontSize: "clamp(2.5rem, 5vw, 4rem)", 
+            fontSize: "clamp(2.5rem, 5vw, 3.5rem)",
             fontWeight: 400,
             letterSpacing: "-0.02em",
-            color: "var(--text-primary)", 
-            margin: "0 0 var(--space-md)" 
+            color: "var(--text-primary)",
+            margin: "0 0 var(--space-md)"
           }}>
             Welcome back, {user.user_metadata?.name || user.email?.split("@")[0] || "Developer"}
           </h1>
-          <p style={{ 
-            fontSize: "var(--font-size-lg)", 
+          <p style={{
+            fontSize: "var(--font-size-lg)",
             color: "var(--text-muted)",
-            maxWidth: 600
+            maxWidth: 600,
+            lineHeight: 1.6,
           }}>
-            Create a new room or join an existing one to start collaborating.
+            Create a new room or manage your API keys to start building.
           </p>
         </div>
 
-        {/* Action Cards */}
-        <div style={{ 
-          display: "grid", 
-          gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", 
+        {/* Action Cards — Cream feature cards */}
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
           gap: "var(--space-xl)",
           marginBottom: "var(--spacing-section)"
         }}>
           <div
-            className="card"
-            style={{ 
-              cursor: "pointer", 
-              transition: "transform var(--transition-fast), box-shadow var(--transition-fast)",
-              display: "flex", 
-              flexDirection: "column", 
-              alignItems: "center", 
+            className="claude-card"
+            style={{
+              cursor: "pointer",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
               justifyContent: "center",
-              padding: "var(--space-2xl)"
+              padding: "var(--space-2xl)",
+              borderRadius: "var(--radius-lg)",
             }}
             onClick={handleCreateRoom}
           >
-            <div style={{ fontSize: "3rem", marginBottom: "var(--space-lg)", color: "var(--primary)" }}>+</div>
-            <h3 style={{ 
-              fontFamily: "var(--font-serif)",
-              fontSize: "var(--font-size-lg)", 
-              fontWeight: 400,
+            <div style={{
+              width: 56, height: 56, borderRadius: "var(--radius-lg)",
+              background: "rgba(204, 120, 92, 0.1)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: 28, marginBottom: "var(--space-lg)", color: "var(--primary)"
+            }}>+</div>
+            <h3 style={{
+              fontFamily: "var(--font-sans)",
+              fontSize: "var(--font-size-lg)",
+              fontWeight: 500,
               color: "var(--text-primary)",
-              marginBottom: "var(--space-xs)"
+              marginBottom: "var(--space-xs)",
+              letterSpacing: 0,
             }}>Create New Room</h3>
-            <p style={{ fontSize: "var(--font-size-sm)", color: "var(--text-muted)", textAlign: "center" }}>
+            <p style={{ fontSize: "var(--font-size-sm)", color: "var(--text-muted)", textAlign: "center", lineHeight: 1.5 }}>
               Start a fresh project with AI assistance
             </p>
           </div>
 
           <div
-            className="card"
-            style={{ 
-              cursor: "pointer", 
-              transition: "transform var(--transition-fast), box-shadow var(--transition-fast)",
-              display: "flex", 
-              flexDirection: "column", 
-              alignItems: "center", 
+            className="claude-card"
+            style={{
+              cursor: "pointer",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
               justifyContent: "center",
-              padding: "var(--space-2xl)"
+              padding: "var(--space-2xl)",
+              borderRadius: "var(--radius-lg)",
+            }}
+            onClick={() => {
+              const id = prompt("Enter room ID to join:");
+              if (id) router.push(`/room/${id}`);
             }}
           >
-            <div style={{ fontSize: "3rem", marginBottom: "var(--space-lg)", color: "var(--text-muted)" }}>⍚</div>
-            <h3 style={{ 
-              fontFamily: "var(--font-serif)",
-              fontSize: "var(--font-size-lg)", 
-              fontWeight: 400,
+            <div style={{
+              width: 56, height: 56, borderRadius: "var(--radius-lg)",
+              background: "rgba(93, 184, 166, 0.1)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: 28, marginBottom: "var(--space-lg)", color: "var(--accent-teal)"
+            }}>🔗</div>
+            <h3 style={{
+              fontFamily: "var(--font-sans)",
+              fontSize: "var(--font-size-lg)",
+              fontWeight: 500,
               color: "var(--text-primary)",
-              marginBottom: "var(--space-xs)"
+              marginBottom: "var(--space-xs)",
+              letterSpacing: 0,
             }}>Join Room</h3>
-            <p style={{ fontSize: "var(--font-size-sm)", color: "var(--text-muted)", textAlign: "center" }}>
+            <p style={{ fontSize: "var(--font-size-sm)", color: "var(--text-muted)", textAlign: "center", lineHeight: 1.5 }}>
               Enter a room ID to collaborate
             </p>
           </div>
         </div>
 
-        {/* API Keys Section */}
-        <section style={{ 
-          background: "var(--bg-secondary)",
+        {/* API Keys Section — Cream surface card */}
+        <section style={{
+          background: "var(--bg-tertiary)",
           borderRadius: "var(--radius-xl)",
-          padding: "var(--spacing-section) var(--space-xl)",
+          padding: "var(--spacing-section) var(--space-2xl)",
           marginBottom: "var(--spacing-section)"
         }}>
           <div style={{ maxWidth: 720, margin: "0 auto" }}>
-            <h2 style={{ 
+            <h2 style={{
               fontFamily: "var(--font-serif)",
-              fontSize: "var(--font-size-2xl)", 
+              fontSize: "clamp(1.75rem, 3vw, 2.25rem)",
               fontWeight: 400,
               letterSpacing: "-0.01em",
               color: "var(--text-primary)",
-              marginBottom: "var(--space-lg)"
+              marginBottom: "var(--space-md)"
             }}>
-              🔑 API Keys
+              API Keys
             </h2>
-            <p style={{ 
-              fontSize: "var(--font-size-base)", 
+            <p style={{
+              fontSize: "var(--font-size-base)",
               color: "var(--text-muted)",
-              marginBottom: "var(--space-xl)"
+              marginBottom: "var(--space-xl)",
+              lineHeight: 1.6,
             }}>
               Manage your API keys for different AI providers. Add multiple keys per provider for automatic load balancing.
             </p>
@@ -248,43 +253,46 @@ export default function DashboardPage() {
           </div>
         </section>
 
-        {/* Dark CTA Band */}
-        <div style={{ 
+        {/* Dark CTA Band — Claude dark surface */}
+        <div style={{
           background: "var(--surface-dark)",
           borderRadius: "var(--radius-xl)",
           padding: "var(--spacing-section)",
           textAlign: "center"
         }}>
-          <h2 style={{ 
+          <h2 style={{
             fontFamily: "var(--font-serif)",
-            fontSize: "var(--font-size-2xl)", 
+            fontSize: "clamp(1.75rem, 3vw, 2.25rem)",
             fontWeight: 400,
+            letterSpacing: "-0.01em",
             color: "var(--text-on-dark)",
             marginBottom: "var(--space-md)"
           }}>
             Ready to start building?
           </h2>
-          <p style={{ 
-            fontSize: "var(--font-size-base)", 
+          <p style={{
+            fontSize: "var(--font-size-base)",
             color: "var(--text-on-dark-soft)",
             marginBottom: "var(--space-xl)",
             maxWidth: 500,
             marginLeft: "auto",
-            marginRight: "auto"
+            marginRight: "auto",
+            lineHeight: 1.6,
           }}>
             Create a new room and let AI help you code faster than ever.
           </p>
           <button
             className="btn"
             onClick={handleCreateRoom}
-            style={{ 
+            style={{
               background: "var(--bg-primary)",
-              color: "var(--text-primary)",
+              color: "var(--primary)",
               padding: "var(--space-md) var(--space-xl)",
               fontSize: "var(--font-size-base)",
               fontWeight: 500,
               border: "none",
-              cursor: "pointer"
+              cursor: "pointer",
+              borderRadius: "var(--radius-md)",
             }}
           >
             Create Your First Room →
@@ -292,17 +300,16 @@ export default function DashboardPage() {
         </div>
       </main>
 
-      {/* Footer */}
-      <footer style={{ 
+      {/* Footer — Dark navy */}
+      <footer style={{
         background: "var(--surface-dark)",
-        padding: "var(--spacing-section) var(--space-xl)",
-        marginTop: "var(--spacing-section)"
+        padding: "var(--spacing-section) var(--space-2xl)",
       }}>
-        <div style={{ maxWidth: 1200, margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "var(--space-2xl)" }}>
+        <div style={{ maxWidth: 1100, margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "var(--space-2xl)" }}>
           <div>
-            <h4 style={{ 
+            <h4 style={{
               fontFamily: "var(--font-sans)",
-              fontSize: "var(--font-size-sm)", 
+              fontSize: "var(--font-size-sm)",
               fontWeight: 500,
               color: "var(--text-on-dark)",
               marginBottom: "var(--space-md)"
@@ -314,9 +321,9 @@ export default function DashboardPage() {
             </ul>
           </div>
           <div>
-            <h4 style={{ 
+            <h4 style={{
               fontFamily: "var(--font-sans)",
-              fontSize: "var(--font-size-sm)", 
+              fontSize: "var(--font-size-sm)",
               fontWeight: 500,
               color: "var(--text-on-dark)",
               marginBottom: "var(--space-md)"
@@ -324,13 +331,12 @@ export default function DashboardPage() {
             <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: "var(--space-sm)" }}>
               <li><a href="#" style={{ fontSize: "var(--font-size-sm)", color: "var(--text-on-dark-soft)", textDecoration: "none" }}>Documentation</a></li>
               <li><a href="#" style={{ fontSize: "var(--font-size-sm)", color: "var(--text-on-dark-soft)", textDecoration: "none" }}>API Reference</a></li>
-              <li><a href="#" style={{ fontSize: "var(--font-size-sm)", color: "var(--text-on-dark-soft)", textDecoration: "none" }}>Community</a></li>
             </ul>
           </div>
           <div>
-            <h4 style={{ 
+            <h4 style={{
               fontFamily: "var(--font-sans)",
-              fontSize: "var(--font-size-sm)", 
+              fontSize: "var(--font-size-sm)",
               fontWeight: 500,
               color: "var(--text-on-dark)",
               marginBottom: "var(--space-md)"
@@ -338,13 +344,12 @@ export default function DashboardPage() {
             <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: "var(--space-sm)" }}>
               <li><a href="#" style={{ fontSize: "var(--font-size-sm)", color: "var(--text-on-dark-soft)", textDecoration: "none" }}>About</a></li>
               <li><a href="#" style={{ fontSize: "var(--font-size-sm)", color: "var(--text-on-dark-soft)", textDecoration: "none" }}>Blog</a></li>
-              <li><a href="#" style={{ fontSize: "var(--font-size-sm)", color: "var(--text-on-dark-soft)", textDecoration: "none" }}>Careers</a></li>
             </ul>
           </div>
           <div>
-            <h4 style={{ 
+            <h4 style={{
               fontFamily: "var(--font-sans)",
-              fontSize: "var(--font-size-sm)", 
+              fontSize: "var(--font-size-sm)",
               fontWeight: 500,
               color: "var(--text-on-dark)",
               marginBottom: "var(--space-md)"
@@ -355,9 +360,9 @@ export default function DashboardPage() {
             </ul>
           </div>
         </div>
-        <div style={{ 
-          borderTop: "1px solid var(--surface-dark-elevated)", 
-          marginTop: "var(--spacing-section)", 
+        <div style={{
+          borderTop: "1px solid var(--surface-dark-elevated)",
+          marginTop: "var(--spacing-section)",
           paddingTop: "var(--space-xl)",
           textAlign: "center",
           fontSize: "var(--font-size-sm)",
