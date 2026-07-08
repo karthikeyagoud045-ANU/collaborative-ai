@@ -24,43 +24,37 @@ export default function LandingPage() {
   };
 
   return (
-    <div style={{ minHeight: "100vh", fontFamily: "var(--font-sans)", color: "var(--text-primary)", overflow: "hidden" }}>
-      {/* Animated mesh gradient background */}
-      <div style={{ position: "fixed", inset: 0, zIndex: 0, background: "var(--mesh-subtle)" }}>
+    <div style={{ minHeight: "100vh", fontFamily: "var(--font-sans)", color: "var(--text-primary)", background: "var(--bg-primary)" }}>
+      {/* Warm cream canvas - Claude design signature */}
+      <div style={{ position: "fixed", inset: 0, zIndex: 0, background: "var(--bg-primary)" }}>
+        {/* Subtle warm gradient overlay */}
         <div style={{
           position: "absolute", top: "-20%", left: "-10%", width: 600, height: 600,
-          background: "radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 70%)",
+          background: "radial-gradient(circle, rgba(204, 120, 92, 0.08) 0%, transparent 70%)",
           borderRadius: "50%", filter: "blur(80px)", animation: "float1 20s ease-in-out infinite",
         }} />
         <div style={{
           position: "absolute", bottom: "-10%", right: "-5%", width: 500, height: 500,
-          background: "radial-gradient(circle, rgba(236,72,153,0.1) 0%, transparent 70%)",
+          background: "radial-gradient(circle, rgba(93, 184, 166, 0.06) 0%, transparent 70%)",
           borderRadius: "50%", filter: "blur(80px)", animation: "float2 25s ease-in-out infinite",
-        }} />
-        <div style={{
-          position: "absolute", top: "40%", left: "50%", width: 400, height: 400,
-          background: "radial-gradient(circle, rgba(6,182,212,0.08) 0%, transparent 70%)",
-          borderRadius: "50%", filter: "blur(60px)", animation: "float3 18s ease-in-out infinite",
         }} />
       </div>
 
       <style>{`
         @keyframes float1 { 0%,100%{transform:translate(0,0)} 50%{transform:translate(60px,40px)} }
         @keyframes float2 { 0%,100%{transform:translate(0,0)} 50%{transform:translate(-50px,-30px)} }
-        @keyframes float3 { 0%,100%{transform:translate(0,0)} 50%{transform:translate(30px,-50px)} }
         @keyframes fadeInUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
-        .glass-card { transition: transform 0.3s ease, box-shadow 0.3s ease; }
-        .glass-card:hover { transform: translateY(-4px); box-shadow: var(--glass-shadow-lg), 0 0 30px rgba(99,102,241,0.1); }
+        .claude-card { transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease; background: var(--surface-card); border: 1px solid var(--border-primary); }
+        .claude-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); border-color: var(--primary); }
+        .claude-dark-card { background: var(--surface-dark); color: var(--text-on-dark); border: 1px solid var(--surface-dark-elevated); }
       `}</style>
 
-      {/* Navigation */}
+      {/* Navigation - Claude style cream nav bar */}
       <nav style={{
         position: "sticky", top: 0, zIndex: 100,
         padding: "var(--space-md) var(--space-2xl)",
-        background: "var(--glass-bg)",
-        backdropFilter: "blur(var(--blur-strong))",
-        WebkitBackdropFilter: "blur(var(--blur-strong))",
-        borderBottom: "1px solid var(--glass-border)",
+        background: "var(--bg-primary)",
+        borderBottom: "1px solid var(--border-primary)",
       }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", maxWidth: 1200, margin: "0 auto" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "var(--space-sm)" }}>
@@ -95,34 +89,28 @@ export default function LandingPage() {
       {/* Hero */}
       <section style={{
         position: "relative", zIndex: 1,
-        padding: "120px var(--space-2xl) 80px",
+        padding: "var(--spacing-section) var(--space-2xl) calc(var(--spacing-section) - 40px)",
         textAlign: "center",
       }}>
         <div style={{ maxWidth: 800, margin: "0 auto" }}>
+          {/* Coral badge - Claude signature */}
           <div style={{
-            display: "inline-block",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "6px",
             padding: "6px 16px",
             borderRadius: "var(--radius-full)",
-            background: "var(--glass-bg)",
-            border: "1px solid var(--glass-border)",
-            backdropFilter: "blur(8px)",
+            background: "rgba(204, 120, 92, 0.1)",
+            border: "1px solid rgba(204, 120, 92, 0.2)",
             fontSize: "var(--font-size-xs)",
             fontWeight: 500,
-            color: "var(--text-secondary)",
+            color: "var(--primary)",
             marginBottom: "var(--space-xl)",
             animation: "fadeInUp 0.6s ease",
           }}>
-            ✨ AI-powered multiplayer IDE with persistent memory
+            <span>✨</span> AI-powered multiplayer IDE with persistent memory
           </div>
           <h1 style={{
-            fontSize: "clamp(var(--font-size-3xl), 5vw, var(--font-size-display))",
-            fontWeight: 800,
-            lineHeight: 1.1,
-            letterSpacing: "-0.04em",
-            margin: 0,
-            background: "linear-gradient(135deg, var(--text-primary) 0%, var(--text-secondary) 100%)",
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent",
             animation: "fadeInUp 0.6s ease 0.1s both",
           }}>
             Build apps at the<br />speed of thought
@@ -145,7 +133,7 @@ export default function LandingPage() {
             <button onClick={handleGetStarted} className="btn btn-primary" style={{
               padding: "14px 32px",
               fontSize: "var(--font-size-base)",
-              fontWeight: 600,
+              fontWeight: 500,
             }}>
               Start Building →
             </button>
@@ -158,8 +146,8 @@ export default function LandingPage() {
           </div>
         </div>
 
-        {/* Floating code preview card */}
-        <div className="glass-strong glass-card" style={{
+        {/* Floating code preview card - Claude dark surface */}
+        <div className="claude-dark-card" style={{
           maxWidth: 700,
           margin: "80px auto 0",
           borderRadius: "var(--radius-xl)",
@@ -195,12 +183,12 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Features Grid */}
-      <section id="features" style={{ position: "relative", zIndex: 1, padding: "80px var(--space-2xl)" }}>
+      {/* Features Grid - Claude cream cards */}
+      <section id="features" style={{ position: "relative", zIndex: 1, padding: "var(--spacing-section) var(--space-2xl)" }}>
         <div style={{ maxWidth: 1100, margin: "0 auto" }}>
           <h2 style={{
-            fontSize: "var(--font-size-2xl)", fontWeight: 700, textAlign: "center",
-            letterSpacing: "-0.02em", marginBottom: "var(--space-2xl)",
+            textAlign: "center",
+            marginBottom: "var(--space-2xl)",
           }}>
             Everything you need to ship fast
           </h2>
@@ -210,7 +198,7 @@ export default function LandingPage() {
             gap: "var(--space-lg)",
           }}>
             {FACES.map((feat, i) => (
-              <div key={feat.title} className="glass glass-card" style={{
+              <div key={feat.title} className="claude-card" style={{
                 padding: "var(--space-xl)",
                 borderRadius: "var(--radius-lg)",
                 animation: `fadeInUp 0.6s ease ${i * 0.1}s both`,
@@ -221,7 +209,12 @@ export default function LandingPage() {
                   display: "flex", alignItems: "center", justifyContent: "center",
                   fontSize: 24, marginBottom: "var(--space-lg)",
                 }}>{feat.icon}</div>
-                <h3 style={{ fontSize: "var(--font-size-lg)", fontWeight: 600, marginBottom: "var(--space-sm)" }}>{feat.title}</h3>
+                <h3 style={{ 
+                  fontSize: "var(--font-size-lg)", 
+                  fontWeight: 500, 
+                  marginBottom: "var(--space-sm)",
+                  fontFamily: "var(--font-sans)",
+                }}>{feat.title}</h3>
                 <p style={{ fontSize: "var(--font-size-sm)", color: "var(--text-secondary)", lineHeight: 1.6 }}>{feat.desc}</p>
               </div>
             ))}
@@ -229,15 +222,17 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* How it Works */}
-      <section id="how" style={{ position: "relative", zIndex: 1, padding: "80px var(--space-2xl)" }}>
+      {/* How it Works - Claude editorial style */}
+      <section id="how" style={{ position: "relative", zIndex: 1, padding: "var(--spacing-section) var(--space-2xl)" }}>
         <div style={{ maxWidth: 900, margin: "0 auto", textAlign: "center" }}>
-          <h2 style={{ fontSize: "var(--font-size-2xl)", fontWeight: 700, letterSpacing: "-0.02em", marginBottom: "var(--space-2xl" }}>
+          <h2 style={{ 
+            marginBottom: "var(--space-2xl)",
+          }}>
             Three steps to production
           </h2>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--space-lg)", justifyContent: "center" }}>
             {STEPS.map((step, i) => (
-              <div key={step.title} className="glass glass-card" style={{
+              <div key={step.title} className="claude-card" style={{
                 flex: "1 1 250px", maxWidth: 280,
                 padding: "var(--space-xl)",
                 borderRadius: "var(--radius-lg)",
@@ -258,35 +253,50 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* CTA */}
-      <section style={{ position: "relative", zIndex: 1, padding: "100px var(--space-2xl)", textAlign: "center" }}>
-        <div className="glass-strong" style={{
+      {/* CTA - Coral band Claude style */}
+      <section style={{ position: "relative", zIndex: 1, padding: "var(--spacing-section) var(--space-2xl)", textAlign: "center" }}>
+        <div style={{
           maxWidth: 600, margin: "0 auto",
           padding: "var(--space-3xl)",
-          borderRadius: "var(--radius-2xl)",
+          borderRadius: "var(--radius-lg)",
+          background: "var(--primary)",
+          color: "var(--text-inverse)",
         }}>
-          <h2 style={{ fontSize: "var(--font-size-2xl)", fontWeight: 700, marginBottom: "var(--space-md", letterSpacing: "-0.02em" }}>
+          <h2 style={{ 
+            marginBottom: "var(--space-md)",
+            color: "var(--text-inverse)",
+          }}>
             Ready to build?
           </h2>
-          <p style={{ color: "var(--text-secondary)", marginBottom: "var(--space-xl)" }}>
+          <p style={{ 
+            color: "rgba(255,255,255,0.9)", 
+            marginBottom: "var(--space-xl)",
+            fontSize: "var(--font-size-base)",
+          }}>
             Sign in with Google and start creating in seconds. No credit card required.
           </p>
-          <button onClick={handleGetStarted} className="btn btn-primary" style={{
-            padding: "14px 40px", fontSize: "var(--font-size-base)", fontWeight: 600,
+          <button onClick={handleGetStarted} className="btn" style={{
+            padding: "14px 40px", 
+            fontSize: "var(--font-size-base)", 
+            fontWeight: 500,
+            background: "var(--bg-primary)",
+            color: "var(--primary)",
+            border: "none",
           }}>
             {user ? "Go to Dashboard" : "Sign In with Google"}
           </button>
         </div>
       </section>
 
-      {/* Footer */}
+      {/* Footer - Claude dark navy */}
       <footer style={{
         position: "relative", zIndex: 1,
-        padding: "var(--space-xl) var(--space-2xl)",
-        borderTop: "1px solid var(--border-primary)",
+        padding: "var(--spacing-section) var(--space-2xl)",
+        background: "var(--surface-dark)",
+        color: "var(--text-on-dark-soft)",
         textAlign: "center",
       }}>
-        <p style={{ fontSize: "var(--font-size-xs)", color: "var(--text-tertiary)" }}>
+        <p style={{ fontSize: "var(--font-size-sm)" }}>
           ⚡ Ultimate Vibe Coder — Built with AI agents · {new Date().getFullYear()}
         </p>
       </footer>

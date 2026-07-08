@@ -16,6 +16,7 @@ import { OrchestratorAgent, type ThinkingStep } from "@/lib/orchestrator";
 import { ThinkingPanel } from "@/components/ThinkingPanel";
 import { ProjectSettingsPanel, type ProjectConfig } from "@/components/ProjectSettingsPanel";
 import { VersionHistory, type VersionEntry } from "@/components/VersionHistory";
+import { BuildHistory } from "@/components/BuildHistory";
 import { ContextAttachments } from "@/components/ContextAttachments";
 import { useCodebaseDownloader } from "@/hooks/useDownloader";
 
@@ -333,6 +334,7 @@ export default function RoomPage() {
   const [projectConfig, setProjectConfig] = useState<ProjectConfig | null>(null);
   const [versionHistory, setVersionHistory] = useState<VersionEntry[]>([]);
   const [contextFiles, setContextFiles] = useState<Array<{ path: string; active: boolean }>>([]);
+  const [showBuildHistory, setShowBuildHistory] = useState(false);
   const activeFile2 = activeFile; // alias for context
 
   const { pendingActions, approveAction, rejectAction } = useAgentApprovals(ydoc);
@@ -702,7 +704,8 @@ export default function RoomPage() {
             { icon: "💬", label: "Chat", action: () => setRightTab("chat") },
             { icon: "🎨", label: "Artist", action: () => setShowArtistMode(true) },
             { icon: "🔍", label: "Search" },
-            { icon: "⚙️", label: "Settings" },
+            { icon: "📦", label: "Build History", action: () => setShowBuildHistory(true) },
+            { icon: "⚙️", label: "Settings", action: () => setShowSettings(true) },
           ].map((item) => (
             <button key={item.label} className="btn btn-ghost btn-sm sidebar-btn" title={item.label} onClick={item.action}>
               {item.icon}
@@ -1081,6 +1084,51 @@ export default function RoomPage() {
           showToast(`Restored: ${version.description}`, "success");
         }}
       />
+
+      {/* Build History Modal */}
+      {showBuildHistory && (
+        <div className="modal-overlay" onClick={() => setShowBuildHistory(false)}>
+          <div className="modal-content" style={{ maxWidth: 700, width: "90%" }} onClick={(e) => e.stopPropagation()}>
+            <div style={{ 
+              display: "flex", 
+              justifyContent: "space-between", 
+              alignItems: "center", 
+              padding: "var(--space-lg)",
+              borderBottom: "1px solid var(--border-primary)"
+            }}>
+              <h3 style={{ 
+                fontFamily: "var(--font-serif)",
+                fontSize: "var(--font-size-xl)", 
+                fontWeight: 400,
+                color: "var(--text-primary)",
+                margin: 0 
+              }}>
+                📦 Build History
+              </h3>
+              <button
+                className="btn btn-ghost btn-sm"
+                onClick={() => setShowBuildHistory(false)}
+              >
+                ✕ Close
+              </button>
+            </div>
+            <BuildHistory
+              roomId={roomId}
+              onSelectVersion={(version, files) => {
+                // Restore files from build
+                const yFiles = ydoc?.getMap("files");
+                if (yFiles) {
+                  Object.entries(files).forEach(([path, content]) => {
+                    yFiles.set(path, content);
+                  });
+                }
+                showToast(`Restored to version ${version}`, "success");
+                setShowBuildHistory(false);
+              }}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Project Settings */}
       {showSettings && projectConfig && (
