@@ -1,6 +1,5 @@
 # ⚡ Collaborative AI
 
-![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Next.js](https://img.shields.io/badge/Next.js-15.0-black?logo=next.js)
 ![WebContainers](https://img.shields.io/badge/WebContainers-API-blueviolet)
 ![Yjs](https://img.shields.io/badge/Yjs-CRDT-orange)
