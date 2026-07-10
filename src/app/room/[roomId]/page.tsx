@@ -5,8 +5,9 @@ import { useParams } from "next/navigation";
 import * as Y from "yjs";
 import { WebsocketProvider } from "y-websocket";
 import { submitPrompt } from "@/lib/agentic-queue";
-import { streamAIResponse, AIStreamRequest } from "@/lib/ai-client";
-import { bootWebContainer, startDevServer, mountFileSystem } from "@/lib/webcontainer";
+import { streamAIResponse, AIStreamRequest, extractCodeFromResponse } from "@/lib/ai-client";
+import CollaborativeEditor from "@/components/CollaborativeEditor";
+import LivePreview from "@/components/LivePreview";
 import { showToast } from "@/hooks/useToast";
 import { useAgentApprovals } from "@/hooks/useAgentApprovals";
 import { logger } from "@/lib/logger";
@@ -269,6 +270,8 @@ export default function RoomPage() {
   const roomId = params.roomId as string;
 
   const [ydoc, setYdoc] = useState<Y.Doc | null>(null);
+  const [wsProvider, setWsProvider] = useState<WebsocketProvider | null>(null);
+  const editorYTextRef = useRef<Y.Text | null>(null);
   const [connected, setConnected] = useState(false);
   const [activeFile, setActiveFile] = useState("index.html");
   const [code, setCode] = useState(DEFAULT_FILES["index.html"]);
@@ -302,8 +305,6 @@ export default function RoomPage() {
   const [aiMode, setAiMode] = useState<"chat" | "agent">("chat");
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [rightTab, setRightTab] = useState<"chat" | "ai">("ai");
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [isPreviewLoading, setIsPreviewLoading] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [editingElement, setEditingElement] = useState<{ outerHTML: string; index: number } | null>(null);
   const [newElementHtml, setNewElementHtml] = useState("");
@@ -404,9 +405,9 @@ export default function RoomPage() {
   // Yjs init
   useEffect(() => {
     const doc = new Y.Doc();
-    const wsProvider = new WebsocketProvider(WS_URL, roomId, doc);
-    wsProvider.on("status", (event: { status: string }) => setConnected(event.status === "connected"));
-    wsProvider.on("sync", (isSynced: boolean) => {
+    const ws = new WebsocketProvider(WS_URL, roomId, doc);
+    ws.on("status", (event: { status: string }) => setConnected(event.status === "connected"));
+    ws.on("sync", (isSynced: boolean) => {
       if (isSynced) {
         const yFiles = doc.getMap("files");
         if (yFiles.size === 0) {
@@ -417,7 +418,8 @@ export default function RoomPage() {
       }
     });
     setYdoc(doc);
-    return () => { wsProvider.destroy(); doc.destroy(); };
+    setWsProvider(ws);
+    return () => { ws.destroy(); doc.destroy(); };
   }, [roomId]);
 
   // Sync active file
@@ -428,6 +430,21 @@ export default function RoomPage() {
     update();
     yFiles.observe(update);
     return () => yFiles.unobserve(update);
+  }, [ydoc, activeFile]);
+
+  // Ponytail: single Y.Text per active file, synced to yFiles map
+  useEffect(() => {
+    if (!ydoc) return;
+    const yFiles = ydoc.getMap("files");
+    const ytext = ydoc.getText(`editor:${activeFile}`);
+    const content = yFiles.get(activeFile);
+    if (typeof content === "string" && ytext.toString() !== content) {
+      ydoc.transact(() => { ytext.delete(0, ytext.length); ytext.insert(0, content); });
+    }
+    const syncToMap = () => { yFiles.set(activeFile, ytext.toString()); };
+    ytext.observe(syncToMap);
+    editorYTextRef.current = ytext;
+    return () => { ytext.unobserve(syncToMap); };
   }, [ydoc, activeFile]);
 
   // Sync file list
@@ -736,20 +753,6 @@ export default function RoomPage() {
     }
   }, [ydoc, roomId]);
 
-  const handleStartPreview = useCallback(async () => {
-    if (!ydoc) return;
-    setIsPreviewLoading(true);
-    try {
-      const yFiles = ydoc.getMap("files");
-      await bootWebContainer();
-      await mountFileSystem(yFiles);
-      const { url } = await startDevServer({ onStdout: (text) => logger.info("DevServer", { output: text }) });
-      setPreviewUrl(url);
-      showToast("Dev server started!", "success");
-    } catch (err) { showToast("Failed to start preview: " + (err instanceof Error ? err.message : "Unknown error"), "error"); }
-    finally { setIsPreviewLoading(false); }
-  }, [ydoc]);
-
   const providerIcons: Record<string, string> = { openai: "●", anthropic: "●", google: "●", groq: "●", openrouter: "●", nvidia: "●" };
 
   return (
@@ -757,7 +760,7 @@ export default function RoomPage() {
       <header className="topbar">
         <div className="topbar-logo">
           <div className="topbar-logo-icon">⚡</div>
-          <span style={{ fontFamily: "var(--font-serif)", fontWeight: 400, letterSpacing: "-0.02em" }}>Ultimate Vibe Coder</span>
+          <span style={{ fontFamily: "var(--font-sans)", fontWeight: 400, letterSpacing: "-0.02em" }}>Ultimate Vibe Coder</span>
         </div>
         <div className="topbar-right">
           <div className="status-indicator">
@@ -785,9 +788,9 @@ export default function RoomPage() {
               <span className="toolbar-btn-icon">⚙️</span>
               <span className="toolbar-btn-label">Settings</span>
             </button>
-            <button className="toolbar-btn toolbar-btn-primary" onClick={handleStartPreview} disabled={isPreviewLoading} title="Deploy Preview">
-              <span className="toolbar-btn-icon">{isPreviewLoading ? "⏳" : "▶"}</span>
-              <span className="toolbar-btn-label">{isPreviewLoading ? "Starting..." : "Deploy"}</span>
+            <button className="toolbar-btn toolbar-btn-primary" title="Preview is live">
+              <span className="toolbar-btn-icon">▶</span>
+              <span className="toolbar-btn-label">Preview</span>
             </button>
           </div>
           <span
@@ -826,14 +829,14 @@ export default function RoomPage() {
                 <div className="ide-panel-header">
                   <span className="ide-panel-title">Files</span>
                   <div style={{ display: "flex", gap: "4px" }}>
-                    <button className="btn btn-ghost btn-sm" style={{ color: "var(--text-on-dark-soft)" }} onClick={() => {
+                    <button className="btn btn-ghost btn-sm" style={{ color: "var(--muted-soft)" }} onClick={() => {
                       const name = prompt("File name (e.g. app.js, style.css, index.html):");
                       if (!name) return;
                       const path = name;
                       if (ydoc) { const yf = ydoc.getMap("files"); ydoc.transact(() => { yf.set(path, ""); }); }
                       setActiveFile(path);
                     }} title="Add file">+</button>
-                    <button className="btn btn-ghost btn-sm" style={{ color: "var(--text-on-dark-soft)" }} onClick={() => setShowLeftPanel(false)}>✕</button>
+                    <button className="btn btn-ghost btn-sm" style={{ color: "var(--muted-soft)" }} onClick={() => setShowLeftPanel(false)}>✕</button>
                   </div>
                 </div>
                 <div className="ide-panel-body">
@@ -848,7 +851,7 @@ export default function RoomPage() {
                         setRenameValue(file.name);
                       }}
                     >
-                      <span className="file-icon" style={{ fontSize: "var(--font-size-xs)", color: file.name.endsWith(".html") ? "var(--primary)" : file.name.endsWith(".css") ? "var(--accent-teal)" : file.name.endsWith(".js") ? "var(--accent-amber)" : "var(--text-on-dark-soft)" }}>
+                      <span className="file-icon" style={{ fontSize: "12px", color: file.name.endsWith(".html") ? "var(--primary-violet)" : file.name.endsWith(".css") ? "var(--primary-violet)" : file.name.endsWith(".js") ? "var(--primary-violet)" : "var(--muted-soft)" }}>
                         {file.name.endsWith(".html") ? "<>" : file.name.endsWith(".css") ? "#" : file.name.endsWith(".js") ? "{}" : file.name.endsWith(".json") ? "[]" : "—"}
                       </span>
                       {renamingFile === file.path ? (
@@ -889,12 +892,21 @@ export default function RoomPage() {
               <span className="badge badge-coral">{activeFile.split(".").pop()?.toUpperCase() || "TXT"}</span>
             </div>
             <div className="ide-panel-body">
-              <textarea
-                value={code}
-                onChange={(e) => handleCodeChange(e.target.value)}
-                style={{ width: "100%", height: "100%", border: "none", outline: "none", resize: "none", fontFamily: "var(--font-mono)", fontSize: "var(--font-size-sm)", lineHeight: 1.7, padding: "var(--space-lg)", background: "var(--bg-primary)", color: "var(--text-primary)", tabSize: 2 }}
-                spellCheck={false}
-              />
+              {editorYTextRef.current && wsProvider ? (
+                <CollaborativeEditor
+                  key={activeFile}
+                  ytext={editorYTextRef.current}
+                  provider={wsProvider}
+                  language={activeFile.endsWith(".html") ? "html" : activeFile.endsWith(".css") ? "css" : activeFile.endsWith(".json") ? "json" : activeFile.endsWith(".ts") ? "typescript" : activeFile.endsWith(".tsx") ? "typescript" : "javascript"}
+                />
+              ) : (
+                <textarea
+                  value={code}
+                  readOnly
+                  style={{ width: "100%", height: "100%", border: "none", outline: "none", resize: "none", fontFamily: "var(--font-mono)", fontSize: "13px", lineHeight: 1.7, padding: "var(--sp-lg)", background: "var(--canvas)", color: "var(--ink)", tabSize: 2 }}
+                  spellCheck={false}
+                />
+              )}
             </div>
           </div>
 
@@ -908,9 +920,6 @@ export default function RoomPage() {
                   <button className={previewDevice === "tablet" ? "active" : ""} onClick={() => setPreviewDevice("tablet")} title="Tablet">📱</button>
                   <button className={previewDevice === "mobile" ? "active" : ""} onClick={() => setPreviewDevice("mobile")} title="Mobile">📲</button>
                 </div>
-                <button className="btn btn-ghost btn-sm" onClick={handleStartPreview} disabled={isPreviewLoading}>
-                  {isPreviewLoading ? "..." : "▶ Run"}
-                </button>
                 <button
                   className={`btn btn-sm ${editMode ? "btn-primary" : "btn-ghost"}`}
                   onClick={() => setEditMode(!editMode)}
@@ -922,57 +931,49 @@ export default function RoomPage() {
             </div>
             <div className="ide-panel-body preview-body">
               {editMode ? (
-                <div style={{ display: "flex", flexDirection: "column", height: "100%", padding: "var(--space-md)", overflow: "auto", background: "var(--bg-secondary)" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "var(--space-sm)" }}>
-                    <span style={{ fontSize: "var(--font-size-sm)", fontWeight: 600, color: "var(--text-primary)" }}>Design Edit Mode</span>
+                <div className="design-edit-panel">
+                  <div className="design-edit-header">
+                    <span className="design-edit-title">Design Edit Mode</span>
                     <button className="btn btn-ghost btn-sm" onClick={() => setEditMode(false)}>✕ Close</button>
                   </div>
-                  <div style={{ marginBottom: "var(--space-sm)" }}>
-                    <div style={{ fontSize: "var(--font-size-xs)", fontWeight: 600, color: "var(--text-secondary)", marginBottom: "var(--space-xs)" }}>Add New Element</div>
-                    <div style={{ display: "flex", gap: "var(--space-sm)" }}>
-                      <input type="text" placeholder='<button class="btn">Click me</button>' value={newElementHtml} onChange={(e) => setNewElementHtml(e.target.value)} style={{ flex: 1, padding: "var(--space-sm)", borderRadius: "var(--radius-sm)", border: "1px solid var(--border-primary)", fontFamily: "var(--font-mono)", fontSize: "var(--font-size-xs)", background: "var(--bg-primary)", color: "var(--text-primary)" }} />
+                  <div className="design-edit-section">
+                    <div className="design-edit-label">Add New Element</div>
+                    <div className="design-edit-row">
+                      <input type="text" placeholder='<button class="btn">Click me</button>' value={newElementHtml} onChange={(e) => setNewElementHtml(e.target.value)} className="design-edit-input" />
                       <button className="btn btn-primary btn-sm" onClick={() => { if (newElementHtml.trim()) { handleAddElement(newElementHtml.trim()); setNewElementHtml(""); } }}>Add</button>
                     </div>
                   </div>
-                  <div style={{ fontSize: "var(--font-size-xs)", fontWeight: 600, color: "var(--text-secondary)", marginBottom: "var(--space-xs)" }}>Elements in Code</div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-xs)" }}>
+                  <div className="design-edit-label">Elements in Code</div>
+                  <div className="design-edit-list">
                     {parseElements(code).map((el, i) => (
-                      <div key={i} style={{ display: "flex", alignItems: "center", gap: "var(--space-sm)", padding: "var(--space-sm)", background: editingElement?.index === el.index ? "var(--accent-subtle, #eef2ff)" : "var(--bg-primary)", borderRadius: "var(--radius-sm)", border: "1px solid var(--border-primary)" }}>
-                        <span style={{ fontSize: "var(--font-size-xs)", fontWeight: 600, fontFamily: "var(--font-mono)", color: "var(--text-tertiary)", minWidth: 50 }}>{el.tag}</span>
-                        <span style={{ flex: 1, fontSize: "var(--font-size-xs)", color: "var(--text-secondary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{el.content || "(empty)"}</span>
+                      <div key={i} className={`design-edit-item ${editingElement?.index === el.index ? "active" : ""}`}>
+                        <span className="design-edit-tag">{el.tag}</span>
+                        <span className="design-edit-content">{el.content || "(empty)"}</span>
                         <button className="btn btn-ghost btn-sm" onClick={() => setEditingElement(editingElement?.index === el.index ? null : { outerHTML: el.outerHTML, index: el.index })} style={{ fontSize: "10px", padding: "2px 8px" }}>Edit</button>
                       </div>
                     ))}
                     {parseElements(code).length === 0 && (
-                      <div style={{ fontSize: "var(--font-size-xs)", color: "var(--text-tertiary)", textAlign: "center", padding: "var(--space-lg)" }}>No HTML elements found. Add code above or use the AI Assistant to generate code.</div>
+                      <div className="design-edit-empty">No HTML elements found. Add code above or use the AI Assistant to generate code.</div>
                     )}
                   </div>
                   {editingElement && (
-                    <div style={{ marginTop: "var(--space-sm)", padding: "var(--space-sm)", background: "var(--bg-primary)", borderRadius: "var(--radius-sm)", border: "1px solid var(--border-primary)" }}>
-                      <div style={{ fontSize: "var(--font-size-xs)", fontWeight: 600, marginBottom: "var(--space-xs)", color: "var(--text-secondary)" }}>Edit Element HTML</div>
-                      <textarea defaultValue={editingElement.outerHTML} style={{ width: "100%", minHeight: 80, padding: "var(--space-sm)", borderRadius: "var(--radius-sm)", border: "1px solid var(--border-primary)", fontFamily: "var(--font-mono)", fontSize: "var(--font-size-xs)", background: "var(--bg-secondary)", color: "var(--text-primary)", resize: "vertical" }} id="edit-element-textarea" />
-                      <div style={{ display: "flex", gap: "var(--space-sm)", marginTop: "var(--space-xs)" }}>
+                    <div className="design-edit-form">
+                      <div className="design-edit-label">Edit Element HTML</div>
+                      <textarea defaultValue={editingElement.outerHTML} className="design-edit-textarea" id="edit-element-textarea" />
+                      <div className="design-edit-actions">
                         <button className="btn btn-primary btn-sm" onClick={() => { const ta = document.getElementById("edit-element-textarea") as HTMLTextAreaElement; if (ta) handleEditElement(editingElement.outerHTML, ta.value); }}>Save</button>
                         <button className="btn btn-secondary btn-sm" onClick={() => setEditingElement(null)}>Cancel</button>
                       </div>
                     </div>
                   )}
                 </div>
-              ) : previewUrl ? (
-                <div className={`preview-frame-wrapper preview-${previewDevice}`}>
-                  <div className="preview-url-bar">
-                    <span className="preview-url-dot" />
-                    <span className="preview-url-dot" />
-                    <span className="preview-url-dot" />
-                    <span className="preview-url-text">{previewUrl}</span>
-                  </div>
-                  <iframe src={previewUrl} className="preview-frame" title="Preview" />
-                </div>
+              ) : ydoc ? (
+                <LivePreview files={ydoc.getMap("files")} autoStart={false} />
               ) : (
                 <div className="empty-state">
                   <div className="empty-state-icon">▶</div>
                   <div className="empty-state-title">Live Preview</div>
-                  <div className="empty-state-desc">Click "Run" to start the dev server and see your app live.</div>
+                  <div className="empty-state-desc">Connecting...</div>
                 </div>
               )}
             </div>
@@ -988,7 +989,7 @@ export default function RoomPage() {
             </div>
 
             {/* Agent Team Picker */}
-            <div style={{ padding: "var(--space-sm) var(--space-md)", borderBottom: "1px solid var(--border-primary)", display: "flex", gap: "var(--space-xs)", flexWrap: "wrap" }}>
+            <div style={{ padding: "var(--sp-sm) var(--sp-md)", borderBottom: "1px solid var(--hairline)", display: "flex", gap: "var(--sp-xs)", flexWrap: "wrap" }}>
               {AGENT_TEAM.map((agent) => (
                 <button
                   key={agent.id}
@@ -1007,33 +1008,33 @@ export default function RoomPage() {
 
             {/* Memory Panel */}
             {showMemoryPanel && (
-              <div style={{ padding: "var(--space-md)", borderBottom: "1px solid var(--border-primary)", background: "var(--bg-tertiary)", maxHeight: 300, overflow: "auto" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "var(--space-sm)" }}>
-                  <div style={{ fontSize: "var(--font-size-xs)", fontWeight: 600, color: "var(--text-primary)" }}>Agent Memories ({agentMemories.length})</div>
+              <div style={{ padding: "var(--sp-md)", borderBottom: "1px solid var(--hairline)", background: "var(--chip-active-bg)", maxHeight: 300, overflow: "auto" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "var(--sp-sm)" }}>
+                  <div style={{ fontSize: "12px", fontWeight: 600, color: "var(--ink)" }}>Agent Memories ({agentMemories.length})</div>
                   <button className="btn btn-ghost btn-sm" onClick={() => setShowMemoryPanel(false)}>✕</button>
                 </div>
                 {agentMemories.length === 0 ? (
-                  <div style={{ fontSize: "var(--font-size-xs)", color: "var(--text-muted)", textAlign: "center", padding: "var(--space-lg)" }}>
+                  <div style={{ fontSize: "12px", color: "var(--muted)", textAlign: "center", padding: "var(--sp-lg)" }}>
                     No memories yet. Chat with agents to build memory.
                   </div>
                 ) : (
-                  <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-xs)" }}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-xs)" }}>
                     {agentMemories.slice(0, 15).map((mem) => {
                       const config = getAgentConfig(mem.agent_role);
                       return (
-                        <div key={mem.id} style={{ padding: "var(--space-sm)", background: "var(--bg-primary)", borderRadius: "var(--radius-sm)", border: "1px solid var(--border-primary)", fontSize: "var(--font-size-xs)" }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: "var(--space-xs)", marginBottom: "var(--space-xs)" }}>
-                            <span style={{ fontSize: "var(--font-size-sm)" }}>{config.icon}</span>
-                            <span style={{ fontWeight: 600, color: "var(--primary)" }}>{config.name}</span>
+                        <div key={mem.id} style={{ padding: "var(--sp-sm)", background: "var(--canvas)", borderRadius: "var(--r-sm)", border: "1px solid var(--hairline)", fontSize: "12px" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: "var(--sp-xs)", marginBottom: "var(--sp-xs)" }}>
+                            <span style={{ fontSize: "13px" }}>{config.icon}</span>
+                            <span style={{ fontWeight: 600, color: "var(--primary-violet)" }}>{config.name}</span>
                             <span className="badge badge-coral" style={{ fontSize: "8px", padding: "1px 6px" }}>{mem.memory_type}</span>
-                            <span style={{ marginLeft: "auto", color: "var(--text-muted)" }}>
+                            <span style={{ marginLeft: "auto", color: "var(--muted)" }}>
                               {'★'.repeat(mem.importance)}{'☆'.repeat(10 - mem.importance)}
                             </span>
                           </div>
-                          <div style={{ color: "var(--text-secondary)", whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
+                          <div style={{ color: "var(--body)", whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
                             {mem.content.slice(0, 200)}{mem.content.length > 200 ? "..." : ""}
                           </div>
-                          <div style={{ marginTop: "var(--space-xs)", fontSize: "10px", color: "var(--text-muted)" }}>
+                          <div style={{ marginTop: "var(--sp-xs)", fontSize: "10px", color: "var(--muted)" }}>
                             {new Date(mem.created_at).toLocaleString()}
                           </div>
                         </div>
@@ -1053,8 +1054,8 @@ export default function RoomPage() {
                 />
                 {showKeyInput && (
                   <div className="api-key-section">
-                    <div style={{ fontSize: "var(--font-size-xs)", fontWeight: 600, marginBottom: "var(--space-sm)", color: "var(--text-secondary)" }}>API Configuration</div>
-                    <div style={{ display: "flex", gap: "var(--space-sm)", marginBottom: "var(--space-sm)" }}>
+                    <div style={{ fontSize: "12px", fontWeight: 600, marginBottom: "var(--sp-sm)", color: "var(--body)" }}>API Configuration</div>
+                    <div style={{ display: "flex", gap: "var(--sp-sm)", marginBottom: "var(--sp-sm)" }}>
                       <select value={aiProvider} onChange={(e) => setAiProvider(e.target.value as any)} className="api-select">
                         <option value="openai">OpenAI</option>
                         <option value="anthropic">Anthropic</option>
@@ -1069,25 +1070,25 @@ export default function RoomPage() {
                       <input type={showKey ? "text" : "password"} placeholder="Enter your API key..." value={k} onChange={(e) => { const keyVal = e.target.value; setK(keyVal); const detected = detectProvider(keyVal); if (detected) { setDetectedProvider(detected); setAiProvider(detected as any); setAiModel(PROVIDER_DEFAULT_MODELS[detected] || "gpt-4o-mini"); } else { setDetectedProvider(null); } }} className="api-input" style={{ paddingRight: 40 }} />
                       <button
                         onClick={() => setShowKey(!showKey)}
-                        style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", fontSize: "var(--font-size-sm)", opacity: 0.5 }}
+                        style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", fontSize: "13px", opacity: 0.5 }}
                       >
                         {showKey ? "🙈" : "👁"}
                       </button>
                     </div>
                     {detectedProvider && (
-                      <div style={{ fontSize: "var(--font-size-xs)", color: "var(--text-tertiary)", marginTop: "var(--space-xs)" }}>Detected: {providerIcons[detectedProvider] || "🔑"} {detectedProvider.charAt(0).toUpperCase() + detectedProvider.slice(1)}</div>
+                      <div style={{ fontSize: "12px", color: "var(--muted)", marginTop: "var(--sp-xs)" }}>Detected: {providerIcons[detectedProvider] || "🔑"} {detectedProvider.charAt(0).toUpperCase() + detectedProvider.slice(1)}</div>
                     )}
                     <div className="api-links">
                       <a href="https://console.groq.com/keys" target="_blank" rel="noopener noreferrer">⚡ Groq →</a>
                       <a href="https://openrouter.ai/workspaces/default/keys" target="_blank" rel="noopener noreferrer">🌐 OpenRouter →</a>
                       <a href="https://build.nvidia.com/meta/llama-3.2-90b-vision-instruct" target="_blank" rel="noopener noreferrer">🟩 NVIDIA →</a>
                     </div>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "var(--space-sm)" }}>
-                      <label style={{ display: "flex", alignItems: "center", gap: "var(--space-xs)", fontSize: "var(--font-size-xs)", color: "var(--text-secondary)", cursor: "pointer" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "var(--sp-sm)" }}>
+                      <label style={{ display: "flex", alignItems: "center", gap: "var(--sp-xs)", fontSize: "12px", color: "var(--body)", cursor: "pointer" }}>
                         <input type="checkbox" checked={aiMode === "agent"} onChange={(e) => setAiMode(e.target.checked ? "agent" : "chat")} />
                         Agent Mode
                       </label>
-                      <label style={{ display: "flex", alignItems: "center", gap: "var(--space-xs)", fontSize: "var(--font-size-xs)", color: orchestratorMode ? "var(--accent-blue, #4f46e5)" : "var(--text-secondary)", cursor: "pointer", fontWeight: orchestratorMode ? 600 : 400 }}>
+                      <label style={{ display: "flex", alignItems: "center", gap: "var(--sp-xs)", fontSize: "12px", color: orchestratorMode ? "var(--primary-violet)" : "var(--body)", cursor: "pointer", fontWeight: orchestratorMode ? 600 : 400 }}>
                         <input type="checkbox" checked={orchestratorMode} onChange={(e) => setOrchestratorMode(e.target.checked)} />
                         🧠 Orchestrator
                       </label>
@@ -1097,8 +1098,8 @@ export default function RoomPage() {
                 )}
 
                 {!showKeyInput && (
-                  <div style={{ padding: "var(--space-sm) var(--space-md)", display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid var(--border-primary)" }}>
-                    <span style={{ fontSize: "var(--font-size-xs)", color: "var(--text-tertiary)" }}>{providerIcons[aiProvider]} {aiProvider} · {aiModel} · {aiMode === "agent" ? "🤖 Agent" : "💬 Chat"}</span>
+                  <div style={{ padding: "var(--sp-sm) var(--sp-md)", display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid var(--hairline)" }}>
+                    <span style={{ fontSize: "12px", color: "var(--muted)" }}>{providerIcons[aiProvider]} {aiProvider} · {aiModel} · {aiMode === "agent" ? "🤖 Agent" : "💬 Chat"}</span>
                     <button className="btn btn-ghost btn-sm" onClick={() => setShowKeyInput(true)}>⚙️</button>
                   </div>
                 )}
@@ -1115,12 +1116,12 @@ export default function RoomPage() {
                 )}
 
                 {pendingActions.length > 0 && (
-                  <div style={{ padding: "var(--space-md)", borderTop: "1px solid var(--border-primary)", background: "var(--bg-tertiary)" }}>
-                    <div style={{ fontSize: "var(--font-size-xs)", fontWeight: 600, color: "var(--text-primary)", marginBottom: "var(--space-sm)" }}>Pending Approvals</div>
+                  <div style={{ padding: "var(--sp-md)", borderTop: "1px solid var(--hairline)", background: "var(--chip-active-bg)" }}>
+                    <div style={{ fontSize: "12px", fontWeight: 600, color: "var(--ink)", marginBottom: "var(--sp-sm)" }}>Pending Approvals</div>
                     {pendingActions.map((action) => (
-                      <div key={action.id} style={{ padding: "var(--space-sm)", background: "var(--bg-primary)", borderRadius: "var(--radius-sm)", marginBottom: "var(--space-sm)", fontSize: "var(--font-size-xs)" }}>
-                        <div style={{ fontWeight: 500, marginBottom: "var(--space-xs)" }}>{action.type}: {action.target}</div>
-                        <div style={{ display: "flex", gap: "var(--space-sm)" }}>
+                      <div key={action.id} style={{ padding: "var(--sp-sm)", background: "var(--canvas)", borderRadius: "var(--r-sm)", marginBottom: "var(--sp-sm)", fontSize: "12px" }}>
+                        <div style={{ fontWeight: 500, marginBottom: "var(--sp-xs)" }}>{action.type}: {action.target}</div>
+                        <div style={{ display: "flex", gap: "var(--sp-sm)" }}>
                           <button className="btn btn-primary btn-sm" onClick={() => approveAction(action.id)}>Approve</button>
                           <button className="btn btn-secondary btn-sm" onClick={() => rejectAction(action.id)}>Reject</button>
                         </div>
@@ -1137,15 +1138,40 @@ export default function RoomPage() {
                       <div className="empty-state-desc">Ask the AI to write, refactor, or explain code.</div>
                     </div>
                   )}
-                  {aiMessages.map((msg) => (
-                    <div key={msg.id} className={`ai-message ai-message-${msg.role}`}>
-                      {msg.role === "assistant" && <div style={{ fontSize: "var(--font-size-xs)", fontWeight: 600, color: "var(--text-tertiary)", marginBottom: "var(--space-xs)" }}>AI</div>}
-                      <div style={{ whiteSpace: "pre-wrap" }}>{msg.content}</div>
-                    </div>
-                  ))}
+                  {aiMessages.map((msg) => {
+                    const extractedCode = msg.role === "assistant" ? extractCodeFromResponse(msg.content) : null;
+                    return (
+                      <div key={msg.id} className={`ai-message ai-message-${msg.role}`}>
+                        {msg.role === "assistant" && <div style={{ fontSize: "12px", fontWeight: 600, color: "var(--muted)", marginBottom: "var(--sp-xs)" }}>AI</div>}
+                        <div style={{ whiteSpace: "pre-wrap" }}>{msg.content}</div>
+                        {extractedCode && (
+                          <div style={{ display: "flex", gap: "var(--sp-sm)", marginTop: "var(--sp-sm)" }}>
+                            <button
+                              className="btn btn-primary btn-sm"
+                              onClick={() => {
+                                if (ydoc) {
+                                  const yFiles = ydoc.getMap("files");
+                                  ydoc.transact(() => { yFiles.set(activeFile, extractedCode); });
+                                  showToast("Code applied to editor", "success");
+                                }
+                              }}
+                            >
+                              Apply to Editor
+                            </button>
+                            <button
+                              className="btn btn-ghost btn-sm"
+                              onClick={() => navigator.clipboard.writeText(extractedCode)}
+                            >
+                              Copy
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                   {isAiLoading && (
                     <div className="ai-message ai-message-assistant">
-                      <div className="loading-dots" style={{ color: "var(--text-tertiary)" }}>
+                      <div className="loading-dots" style={{ color: "var(--muted)" }}>
                         Thinking<span>.</span><span>.</span><span>.</span>
                       </div>
                     </div>
@@ -1227,14 +1253,14 @@ export default function RoomPage() {
               display: "flex", 
               justifyContent: "space-between", 
               alignItems: "center", 
-              padding: "var(--space-lg)",
-              borderBottom: "1px solid var(--border-primary)"
+              padding: "var(--sp-lg)",
+              borderBottom: "1px solid var(--hairline)"
             }}>
               <h3 style={{ 
-                fontFamily: "var(--font-serif)",
-                fontSize: "var(--font-size-xl)", 
+                fontFamily: "var(--font-sans)",
+                fontSize: "16px", 
                 fontWeight: 400,
-                color: "var(--text-primary)",
+                color: "var(--ink)",
                 margin: 0 
               }}>
                 📦 Build History

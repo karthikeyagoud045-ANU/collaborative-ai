@@ -11,14 +11,14 @@ export default function LoginPage() {
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
-      background: "linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%)",
+      background: "linear-gradient(135deg, var(--canvas) 0%, var(--canvas-panel) 100%)",
       fontFamily: "var(--font-sans, 'Inter', sans-serif)",
     }}>
       <div style={{
-        background: "var(--bg-primary)",
-        border: "1px solid var(--border-primary)",
-        borderRadius: "var(--radius-lg, 12px)",
-        padding: "var(--space-xl, 2rem)",
+        background: "var(--canvas)",
+        border: "1px solid var(--hairline)",
+        borderRadius: "var(--r-lg)",
+        padding: "var(--sp-xl)",
         maxWidth: 400,
         width: "100%",
         textAlign: "center",
@@ -28,32 +28,32 @@ export default function LoginPage() {
         <div style={{
           width: 56,
           height: 56,
-          borderRadius: "var(--radius-md, 10px)",
+          borderRadius: "var(--r-md)",
           background: "linear-gradient(135deg, #4f46e5, #7c3aed)",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
           fontSize: "1.5rem",
-          margin: "0 auto var(--space-md, 1rem)",
+          margin: "0 auto var(--sp-md)",
           color: "#fff",
         }}>
           ⚡
         </div>
 
         <h1 style={{
-          fontSize: "var(--font-size-xl, 1.25rem)",
+          fontSize: "16px",
           fontWeight: 700,
-          color: "var(--text-primary)",
+          color: "var(--ink)",
           margin: 0,
         }}>
           Ultimate Vibe Coder
         </h1>
 
         <p style={{
-          fontSize: "var(--font-size-sm, 0.875rem)",
-          color: "var(--text-secondary)",
-          marginTop: "var(--space-xs, 0.5rem)",
-          marginBottom: "var(--space-lg, 1.5rem)",
+          fontSize: "13px",
+          color: "var(--body)",
+          marginTop: "var(--sp-xs)",
+          marginBottom: "var(--sp-lg)",
         }}>
           Sign in to start building
         </p>
@@ -65,25 +65,25 @@ export default function LoginPage() {
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            gap: "var(--space-sm, 0.75rem)",
+            gap: "var(--sp-sm)",
             width: "100%",
-            padding: "var(--space-sm, 0.75rem) var(--space-md, 1rem)",
-            background: "var(--bg-primary)",
-            border: "1px solid var(--border-primary)",
-            borderRadius: "var(--radius-sm, 8px)",
-            fontSize: "var(--font-size-sm, 0.875rem)",
+            padding: "var(--sp-sm) var(--sp-md)",
+            background: "var(--canvas)",
+            border: "1px solid var(--hairline)",
+            borderRadius: "var(--r-sm)",
+            fontSize: "13px",
             fontWeight: 500,
-            color: "var(--text-primary)",
+            color: "var(--ink)",
             cursor: "pointer",
             transition: "all 0.15s ease",
           }}
           onMouseOver={(e) => {
-            e.currentTarget.style.background = "var(--bg-secondary)";
-            e.currentTarget.style.borderColor = "var(--border-secondary)";
+            e.currentTarget.style.background = "var(--canvas-panel)";
+            e.currentTarget.style.borderColor = "var(--hairline)";
           }}
           onMouseOut={(e) => {
-            e.currentTarget.style.background = "var(--bg-primary)";
-            e.currentTarget.style.borderColor = "var(--border-primary)";
+            e.currentTarget.style.background = "var(--canvas)";
+            e.currentTarget.style.borderColor = "var(--hairline)";
           }}
         >
           {/* Google "G" Icon */}
@@ -98,8 +98,8 @@ export default function LoginPage() {
 
         <p style={{
           fontSize: "10px",
-          color: "var(--text-tertiary)",
-          marginTop: "var(--space-md, 1rem)",
+          color: "var(--muted)",
+          marginTop: "var(--sp-md)",
         }}>
           By signing in, you agree to our Terms of Service
         </p>

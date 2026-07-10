@@ -60,8 +60,8 @@ export function BuildHistory({ roomId, onSelectVersion }: BuildHistoryProps) {
 
   if (loading) {
     return (
-      <div style={{ padding: "var(--space-lg)", textAlign: "center" }}>
-        <div className="animate-pulse" style={{ color: "var(--text-muted)" }}>
+      <div style={{ padding: "var(--sp-lg)", textAlign: "center" }}>
+        <div className="animate-pulse" style={{ color: "var(--muted)" }}>
           Loading build history...
         </div>
       </div>
@@ -70,18 +70,18 @@ export function BuildHistory({ roomId, onSelectVersion }: BuildHistoryProps) {
 
   if (builds.length === 0) {
     return (
-      <div style={{ padding: "var(--space-xl)", textAlign: "center" }}>
-        <div style={{ fontSize: "2rem", marginBottom: "var(--space-md)", opacity: 0.3 }}>📦</div>
+      <div style={{ padding: "var(--sp-xl)", textAlign: "center" }}>
+        <div style={{ fontSize: "2rem", marginBottom: "var(--sp-md)", opacity: 0.3 }}>📦</div>
         <h3 style={{ 
-          fontFamily: "var(--font-serif)",
-          fontSize: "var(--font-size-lg)", 
+          fontFamily: "var(--font-sans)",
+          fontSize: "15px", 
           fontWeight: 400,
-          color: "var(--text-primary)",
-          marginBottom: "var(--space-sm)"
+          color: "var(--ink)",
+          marginBottom: "var(--sp-sm)"
         }}>
           No build history yet
         </h3>
-        <p style={{ fontSize: "var(--font-size-sm)", color: "var(--text-muted)" }}>
+        <p style={{ fontSize: "13px", color: "var(--muted)" }}>
           Builds will be automatically saved when you generate new code with AI.
         </p>
       </div>
@@ -89,54 +89,54 @@ export function BuildHistory({ roomId, onSelectVersion }: BuildHistoryProps) {
   }
 
   return (
-    <div style={{ padding: "var(--space-lg)" }}>
+    <div style={{ padding: "var(--sp-lg)" }}>
       <h3 style={{ 
-        fontFamily: "var(--font-serif)",
-        fontSize: "var(--font-size-lg)", 
+        fontFamily: "var(--font-sans)",
+        fontSize: "15px", 
         fontWeight: 400,
-        color: "var(--text-primary)",
-        marginBottom: "var(--space-lg)"
+        color: "var(--ink)",
+        marginBottom: "var(--sp-lg)"
       }}>
         📦 Build History ({builds.length})
       </h3>
       
-      <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-md)" }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-md)" }}>
         {builds.map((build) => (
           <div
             key={build.id}
             className="card"
             style={{
-              padding: "var(--space-md)",
+              padding: "var(--sp-md)",
               cursor: "pointer",
-              transition: "all var(--transition-fast)",
+              transition: "all 120ms ease",
             }}
             onClick={() => toggleExpand(build.id)}
           >
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "var(--space-md)" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "var(--sp-md)" }}>
                 <div style={{
                   width: 32,
                   height: 32,
-                  borderRadius: "var(--radius-md)",
-                  background: "var(--bg-tertiary)",
+                  borderRadius: "var(--r-md)",
+                  background: "var(--chip-active-bg)",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  fontSize: "var(--font-size-lg)",
+                  fontSize: "15px",
                 }}>
                   📦
                 </div>
                 <div>
                   <div style={{ 
                     fontWeight: 500, 
-                    color: "var(--text-primary)",
-                    fontSize: "var(--font-size-sm)"
+                    color: "var(--ink)",
+                    fontSize: "13px"
                   }}>
                     Version {build.version}
                   </div>
                   <div style={{ 
-                    fontSize: "var(--font-size-xs)", 
-                    color: "var(--text-muted)",
+                    fontSize: "12px", 
+                    color: "var(--muted)",
                     marginTop: "2px"
                   }}>
                     {new Date(build.createdAt).toLocaleString()}
@@ -144,13 +144,13 @@ export function BuildHistory({ roomId, onSelectVersion }: BuildHistoryProps) {
                 </div>
               </div>
               
-              <div style={{ display: "flex", gap: "var(--space-sm)", alignItems: "center" }}>
+              <div style={{ display: "flex", gap: "var(--sp-sm)", alignItems: "center" }}>
                 <span style={{ 
-                  fontSize: "var(--font-size-xs)", 
-                  color: "var(--text-muted)",
-                  background: "var(--bg-secondary)",
+                  fontSize: "12px", 
+                  color: "var(--muted)",
+                  background: "var(--canvas-panel)",
                   padding: "2px 8px",
-                  borderRadius: "var(--radius-full)"
+                  borderRadius: "var(--r-pill)"
                 }}>
                   {Object.keys(build.filesSnapshot).length} files
                 </span>
@@ -160,11 +160,11 @@ export function BuildHistory({ roomId, onSelectVersion }: BuildHistoryProps) {
                     handleRestore(build);
                   }}
                   className="btn btn-secondary btn-sm"
-                  style={{ fontSize: "var(--font-size-xs)" }}
+                  style={{ fontSize: "12px" }}
                 >
                   Restore
                 </button>
-                <span style={{ fontSize: "var(--font-size-lg)", color: "var(--text-muted)" }}>
+                <span style={{ fontSize: "15px", color: "var(--muted)" }}>
                   {expandedBuild === build.id ? "▲" : "▼"}
                 </span>
               </div>
@@ -172,26 +172,26 @@ export function BuildHistory({ roomId, onSelectVersion }: BuildHistoryProps) {
 
             {expandedBuild === build.id && (
               <div style={{
-                marginTop: "var(--space-md)",
-                paddingTop: "var(--space-md)",
-                borderTop: "1px solid var(--border-primary)",
+                marginTop: "var(--sp-md)",
+                paddingTop: "var(--sp-md)",
+                borderTop: "1px solid var(--hairline)",
               }}>
                 {build.aiPrompt && (
-                  <div style={{ marginBottom: "var(--space-md)" }}>
+                  <div style={{ marginBottom: "var(--sp-md)" }}>
                     <div style={{ 
-                      fontSize: "var(--font-size-xs)", 
+                      fontSize: "12px", 
                       fontWeight: 500, 
-                      color: "var(--text-secondary)",
-                      marginBottom: "var(--space-xs)"
+                      color: "var(--body)",
+                      marginBottom: "var(--sp-xs)"
                     }}>
                       Prompt:
                     </div>
                     <div style={{ 
-                      fontSize: "var(--font-size-sm)", 
-                      color: "var(--text-primary)",
-                      background: "var(--bg-secondary)",
-                      padding: "var(--space-sm)",
-                      borderRadius: "var(--radius-md)",
+                      fontSize: "13px", 
+                      color: "var(--ink)",
+                      background: "var(--canvas-panel)",
+                      padding: "var(--sp-sm)",
+                      borderRadius: "var(--r-md)",
                       fontFamily: "var(--font-sans)",
                       lineHeight: 1.5
                     }}>
@@ -204,21 +204,21 @@ export function BuildHistory({ roomId, onSelectVersion }: BuildHistoryProps) {
                 
                 <div>
                   <div style={{ 
-                    fontSize: "var(--font-size-xs)", 
+                    fontSize: "12px", 
                     fontWeight: 500, 
-                    color: "var(--text-secondary)",
-                    marginBottom: "var(--space-xs)"
+                    color: "var(--body)",
+                    marginBottom: "var(--sp-xs)"
                   }}>
                     Files in this build:
                   </div>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--space-xs)" }}>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--sp-xs)" }}>
                     {Object.keys(build.filesSnapshot).map((fileName) => (
                       <span
                         key={fileName}
                         className="badge badge-blue"
                         style={{
-                          background: "var(--bg-tertiary)",
-                          color: "var(--text-primary)",
+                          background: "var(--chip-active-bg)",
+                          color: "var(--ink)",
                           fontSize: "10px",
                           padding: "4px 8px",
                         }}

@@ -3,19 +3,19 @@
 export default function GoogleCredentialsHelper() {
   return (
     <div style={{
-      padding: "var(--space-lg)",
-      background: "var(--bg-primary)",
-      border: "1px solid var(--border-primary)",
-      borderRadius: "var(--radius-md)",
+      padding: "var(--sp-lg)",
+      background: "var(--canvas)",
+      border: "1px solid var(--hairline)",
+      borderRadius: "var(--r-md)",
     }}>
-      <h3 style={{ margin: 0, marginBottom: "var(--space-sm)", fontSize: "var(--font-size-sm)", fontWeight: 600, color: "var(--text-primary)" }}>
+      <h3 style={{ margin: 0, marginBottom: "var(--sp-sm)", fontSize: "13px", fontWeight: 600, color: "var(--ink)" }}>
         🔑 Google OAuth Setup
       </h3>
-      <p style={{ fontSize: "var(--font-size-xs)", color: "var(--text-secondary)", marginBottom: "var(--space-md)" }}>
+      <p style={{ fontSize: "12px", color: "var(--body)", marginBottom: "var(--sp-md)" }}>
         Follow these steps to enable Google Sign-In:
       </p>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-sm)" }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-sm)" }}>
         <Step
           number={1}
           title="Create Google OAuth Credentials"
@@ -43,12 +43,12 @@ export default function GoogleCredentialsHelper() {
       </div>
 
       <div style={{
-        marginTop: "var(--space-md)",
-        padding: "var(--space-sm)",
-        background: "var(--bg-tertiary)",
-        borderRadius: "var(--radius-sm)",
+        marginTop: "var(--sp-md)",
+        padding: "var(--sp-sm)",
+        background: "var(--chip-active-bg)",
+        borderRadius: "var(--r-sm)",
         fontSize: "10px",
-        color: "var(--text-tertiary)",
+        color: "var(--muted)",
       }}>
         <strong>Note:</strong> Google Client ID and Secret are stored in Supabase Dashboard, not in .env.local. This keeps credentials secure server-side.
       </div>
@@ -64,12 +64,12 @@ function Step({ number, title, link, linkText, desc }: {
   desc: string;
 }) {
   return (
-    <div style={{ display: "flex", gap: "var(--space-sm)", alignItems: "flex-start" }}>
+    <div style={{ display: "flex", gap: "var(--sp-sm)", alignItems: "flex-start" }}>
       <div style={{
         width: 22,
         height: 22,
         borderRadius: "50%",
-        background: "var(--accent-blue, #4f46e5)",
+        background: "var(--primary-violet)",
         color: "#fff",
         display: "flex",
         alignItems: "center",
@@ -81,10 +81,10 @@ function Step({ number, title, link, linkText, desc }: {
         {number}
       </div>
       <div style={{ flex: 1 }}>
-        <div style={{ fontSize: "var(--font-size-xs)", fontWeight: 600, color: "var(--text-primary)" }}>
+        <div style={{ fontSize: "12px", fontWeight: 600, color: "var(--ink)" }}>
           {title}
         </div>
-        <div style={{ fontSize: "10px", color: "var(--text-tertiary)", marginTop: "2px" }}>
+        <div style={{ fontSize: "10px", color: "var(--muted)", marginTop: "2px" }}>
           {desc}
         </div>
         {link && (
@@ -94,7 +94,7 @@ function Step({ number, title, link, linkText, desc }: {
             rel="noopener noreferrer"
             style={{
               fontSize: "10px",
-              color: "var(--accent-blue, #4f46e5)",
+              color: "var(--primary-violet)",
               textDecoration: "underline",
               display: "inline-block",
               marginTop: "2px",

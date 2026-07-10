@@ -8,19 +8,19 @@ export function ThinkingPanel({ steps, isVisible }: { steps: ThinkingStep[]; isV
 
   return (
     <div style={{
-      padding: "var(--space-sm) var(--space-md)",
-      borderBottom: "1px solid var(--border-primary)",
-      background: "var(--bg-tertiary)",
+      padding: "var(--sp-sm) var(--sp-md)",
+      borderBottom: "1px solid var(--hairline)",
+      background: "var(--chip-active-bg)",
       maxHeight: 200,
       overflow: "auto",
     }}>
       <div style={{
         fontSize: "10px",
         fontWeight: 600,
-        color: "var(--text-tertiary)",
+        color: "var(--muted)",
         textTransform: "uppercase",
         letterSpacing: "0.5px",
-        marginBottom: "var(--space-xs)",
+        marginBottom: "var(--sp-xs)",
         display: "flex",
         alignItems: "center",
         gap: "4px",
@@ -41,7 +41,7 @@ export function ThinkingPanel({ steps, isVisible }: { steps: ThinkingStep[]; isV
                 alignItems: "flex-start",
                 gap: "6px",
                 padding: "4px 6px",
-                borderRadius: "var(--radius-sm)",
+                borderRadius: "var(--r-sm)",
                 background: step.status === "done" ? "rgba(5,150,105,0.06)" : step.status === "error" ? "rgba(220,38,38,0.06)" : "transparent",
                 fontSize: "11px",
                 transition: "all 0.2s ease",
@@ -58,12 +58,12 @@ export function ThinkingPanel({ steps, isVisible }: { steps: ThinkingStep[]; isV
                 <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
                   <span>{config.icon}</span>
                   <span style={{ fontWeight: 600, color: config.color }}>{config.name}</span>
-                  <span style={{ color: "var(--text-tertiary)" }}>·</span>
-                  <span style={{ color: "var(--text-secondary)" }}>{step.action}</span>
+                  <span style={{ color: "var(--muted)" }}>·</span>
+                  <span style={{ color: "var(--body)" }}>{step.action}</span>
                 </div>
                 {step.result && (
                   <div style={{
-                    color: "var(--text-tertiary)",
+                    color: "var(--muted)",
                     marginTop: "2px",
                     fontSize: "10px",
                     overflow: "hidden",

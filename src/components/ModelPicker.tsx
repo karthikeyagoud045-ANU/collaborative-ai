@@ -20,15 +20,15 @@ interface ModelPickerProps {
 }
 
 const PROVIDER_COLORS: Record<string, string> = {
-  anthropic: "var(--primary)",
-  openai: "var(--accent-teal)",
-  google: "var(--accent-amber)",
+  anthropic: "var(--primary-violet)",
+  openai: "var(--primary-violet)",
+  google: "var(--primary-violet)",
   meta: "var(--success)",
-  mistralai: "var(--text-muted)",
+  mistralai: "var(--muted)",
   nvidia: "var(--success)",
-  deepseek: "var(--accent-teal)",
-  cohere: "var(--accent-amber)",
-  qwen: "var(--primary)",
+  deepseek: "var(--primary-violet)",
+  cohere: "var(--primary-violet)",
+  qwen: "var(--primary-violet)",
 };
 
 function getProviderFromId(modelId: string): string {
@@ -73,6 +73,8 @@ export function ModelPicker({
   const [search, setSearch] = useState("");
   const [error, setError] = useState("");
   const [keyDraft, setKeyDraft] = useState("");
+  // Total LLMs detected for the current key (all providers), surfaced to the user.
+  const [totalModels, setTotalModels] = useState<number | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
 
@@ -102,8 +104,10 @@ export function ModelPicker({
           };
         });
         setModels(modelList);
+        setTotalModels(modelList.length);
       } else {
         setError(data.error || "Failed to fetch models");
+        setTotalModels(null);
       }
     } catch {
       setError("Failed to fetch models");
@@ -202,8 +206,16 @@ export function ModelPicker({
         onClick={() => setIsOpen(!isOpen)}
         title={selectedModel || "Select a model"}
       >
-        <span className="model-picker-dot" style={{ background: PROVIDER_COLORS[getProviderFromId(selectedModel)] || "var(--text-muted)" }} />
+        <span className="model-picker-dot" style={{ background: PROVIDER_COLORS[getProviderFromId(selectedModel)] || "var(--muted)" }} />
         <span className="model-picker-label">{modelDisplayName}</span>
+        {totalModels !== null && totalModels > 0 && (
+          <span
+            className="model-picker-count"
+            title={`${totalModels} LLMs detected for this API key`}
+          >
+            {totalModels}
+          </span>
+        )}
         <span className="model-picker-chevron">{isOpen ? "▲" : "▼"}</span>
       </button>
 
@@ -224,7 +236,7 @@ export function ModelPicker({
               className="btn btn-ghost btn-sm"
               onClick={() => { setShowKeyInput(!showKeyInput); }}
               title="Change API key"
-              style={{ fontSize: "var(--font-size-xs)", flexShrink: 0 }}
+              style={{ fontSize: "12px", flexShrink: 0 }}
             >
               🔑
             </button>
@@ -240,7 +252,7 @@ export function ModelPicker({
                 onChange={(e) => setKeyDraft(e.target.value)}
                 className="model-picker-key-input"
               />
-              <div style={{ display: "flex", gap: "var(--space-xs)", marginTop: "var(--space-xs)" }}>
+              <div style={{ display: "flex", gap: "var(--sp-xs)", marginTop: "var(--sp-xs)" }}>
                 <button className="btn btn-primary btn-sm" onClick={handleSaveKey} disabled={!keyDraft.trim()}>
                   Save
                 </button>
@@ -250,8 +262,8 @@ export function ModelPicker({
               </div>
               {error && (
                 <div style={{
-                  fontSize: "var(--font-size-xs)",
-                  marginTop: "var(--space-xs)",
+                  fontSize: "12px",
+                  marginTop: "var(--sp-xs)",
                   color: error.startsWith("✓") ? "var(--success)" : "var(--error)",
                 }}>
                   {error}
@@ -260,21 +272,32 @@ export function ModelPicker({
             </div>
           )}
 
+          {/* Model count summary */}
+          {totalModels !== null && totalModels > 0 && !loading && (
+            <div className="model-picker-summary">
+              <span className="model-picker-summary-count">{totalModels}</span>
+              LLMs available
+              <span className="model-picker-summary-sub">
+                across {sortedProviders.length} {sortedProviders.length === 1 ? "provider" : "providers"}
+              </span>
+            </div>
+          )}
+
           {/* Model list */}
           <div className="model-picker-list">
             {loading && models.length === 0 ? (
               // Skeleton loading
-              <div style={{ padding: "var(--space-md)" }}>
+              <div style={{ padding: "var(--sp-md)" }}>
                 {[1, 2, 3, 4, 5].map((i) => (
-                  <div key={i} className="skeleton" style={{ height: 32, marginBottom: 4, borderRadius: "var(--radius-sm)" }} />
+                  <div key={i} className="skeleton" style={{ height: 32, marginBottom: 4, borderRadius: "var(--r-sm)" }} />
                 ))}
               </div>
             ) : sortedProviders.length === 0 ? (
               <div style={{
-                padding: "var(--space-xl)",
+                padding: "var(--sp-xl)",
                 textAlign: "center",
-                color: "var(--text-muted)",
-                fontSize: "var(--font-size-xs)",
+                color: "var(--muted)",
+                fontSize: "12px",
               }}>
                 {apiKey
                   ? search
@@ -288,7 +311,7 @@ export function ModelPicker({
                   <div className="model-picker-group-header">
                     <span
                       className="model-picker-provider-dot"
-                      style={{ background: PROVIDER_COLORS[providerKey] || "var(--text-muted)" }}
+                      style={{ background: PROVIDER_COLORS[providerKey] || "var(--muted)" }}
                     />
                     {getProviderDisplayName(providerKey)}
                     <span className="model-picker-group-count">{grouped[providerKey].length}</span>
@@ -309,7 +332,7 @@ export function ModelPicker({
                         </span>
                       )}
                       {selectedModel === model.id && (
-                        <span style={{ color: "var(--primary)", fontSize: "10px" }}>✓</span>
+                        <span style={{ color: "var(--primary-violet)", fontSize: "10px" }}>✓</span>
                       )}
                     </button>
                   ))}

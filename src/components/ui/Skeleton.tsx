@@ -27,7 +27,7 @@ interface SkeletonProps {
   borderRadius?: string;
 }
 
-export function Skeleton({ width = "100%", height = "16px", borderRadius = "var(--radius-sm)" }: SkeletonProps) {
+export function Skeleton({ width = "100%", height = "16px", borderRadius = "var(--r-sm)" }: SkeletonProps) {
   return (
     <div
       className="skeleton"
@@ -38,8 +38,8 @@ export function Skeleton({ width = "100%", height = "16px", borderRadius = "var(
 
 export function MessageSkeleton() {
   return (
-    <div style={{ padding: "var(--space-md)", display: "flex", flexDirection: "column", gap: "var(--space-sm)" }}>
-      <div style={{ display: "flex", gap: "var(--space-sm)", alignItems: "center" }}>
+    <div style={{ padding: "var(--sp-md)", display: "flex", flexDirection: "column", gap: "var(--sp-sm)" }}>
+      <div style={{ display: "flex", gap: "var(--sp-sm)", alignItems: "center" }}>
         <div className="skeleton" style={{ width: 24, height: 24, borderRadius: "50%" }} />
         <div className="skeleton" style={{ width: 80, height: 12 }} />
       </div>

@@ -62,8 +62,8 @@ export default function TerminalPanel({ terminalOutput }: TerminalPanelProps) {
         display: "flex",
         flexDirection: "column",
         height: isExpanded ? "200px" : "38px",
-        borderTop: "1px solid var(--border-primary)",
-        background: "var(--bg-primary)",
+        borderTop: "1px solid var(--hairline)",
+        background: "var(--canvas)",
         transition: "height 0.2s ease",
       }}
     >
@@ -81,7 +81,7 @@ export default function TerminalPanel({ terminalOutput }: TerminalPanelProps) {
           {lineCount > 0 && (
             <span
               className="badge badge-blue"
-              style={{ marginLeft: "var(--space-xs)" }}
+              style={{ marginLeft: "var(--sp-xs)" }}
             >
               {lineCount} lines
             </span>
@@ -112,8 +112,8 @@ export default function TerminalPanel({ terminalOutput }: TerminalPanelProps) {
           </button>
           <span
             style={{
-              fontSize: "var(--font-size-xs)",
-              color: "var(--text-tertiary)",
+              fontSize: "12px",
+              color: "var(--muted)",
               transition: "transform 0.2s ease",
               transform: isExpanded ? "rotate(180deg)" : "rotate(0deg)",
             }}
@@ -129,20 +129,20 @@ export default function TerminalPanel({ terminalOutput }: TerminalPanelProps) {
           style={{
             flex: 1,
             overflowY: "auto",
-            padding: "var(--space-sm) var(--space-md)",
+            padding: "var(--sp-sm) var(--sp-md)",
             fontFamily: "var(--font-mono)",
-            fontSize: "var(--font-size-xs)",
+            fontSize: "12px",
             lineHeight: 1.6,
-            color: "var(--text-secondary)",
+            color: "var(--body)",
             background: "hsl(228, 28%, 6%)",
           }}
         >
           {lines.length === 0 && (
             <div
               style={{
-                color: "var(--text-tertiary)",
+                color: "var(--muted)",
                 fontStyle: "italic",
-                padding: "var(--space-sm)",
+                padding: "var(--sp-sm)",
               }}
             >
               Terminal output will appear here...
@@ -154,12 +154,12 @@ export default function TerminalPanel({ terminalOutput }: TerminalPanelProps) {
               key={i}
               style={{
                 color: line.text.startsWith("[stderr]")
-                  ? "var(--accent-red)"
+                  ? "var(--error)"
                   : line.text.includes("Error")
-                    ? "var(--accent-red)"
+                    ? "var(--error)"
                     : line.text.includes("success") || line.text.includes("ready")
-                      ? "var(--accent-green)"
-                      : "var(--text-secondary)",
+                      ? "var(--success)"
+                      : "var(--body)",
                 whiteSpace: "pre-wrap",
                 wordBreak: "break-all",
               }}

@@ -12,9 +12,10 @@ import {
 interface LivePreviewProps {
   files: Y.Map<unknown>;
   onTerminalOutput?: (output: string) => void;
+  autoStart?: boolean;
 }
 
-export default function LivePreview({ files, onTerminalOutput }: LivePreviewProps) {
+export default function LivePreview({ files, onTerminalOutput, autoStart = true }: LivePreviewProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -91,6 +92,7 @@ export default function LivePreview({ files, onTerminalOutput }: LivePreviewProp
   }, [files, isBooted, previewUrl, handleStdout, handleStderr]);
 
   useEffect(() => {
+    if (!autoStart) return;
     if (debounceTimer.current) {
       clearTimeout(debounceTimer.current);
     }
@@ -104,7 +106,7 @@ export default function LivePreview({ files, onTerminalOutput }: LivePreviewProp
         clearTimeout(debounceTimer.current);
       }
     };
-  }, [files, mountFiles]);
+  }, [files, mountFiles, autoStart]);
 
   if (!isWebContainerSupported()) {
     return (
@@ -112,13 +114,13 @@ export default function LivePreview({ files, onTerminalOutput }: LivePreviewProp
         <div className="preview-iframe-wrapper">
           <div className="preview-loading">
             <div style={{ fontSize: "2rem", marginBottom: "1rem" }}>⚠️</div>
-            <div className="preview-loading-text" style={{ color: "var(--accent-orange)" }}>
+            <div className="preview-loading-text" style={{ color: "var(--warning)" }}>
               WebContainer requires SharedArrayBuffer
             </div>
             <div
               style={{
-                fontSize: "var(--font-size-xs)",
-                color: "var(--text-tertiary)",
+                fontSize: "12px",
+                color: "var(--muted)",
                 maxWidth: 300,
                 textAlign: "center",
                 lineHeight: 1.5,

@@ -8,15 +8,15 @@ export function ContextAttachments({ files, onRemove }: {
 
   return (
     <div style={{
-      padding: "var(--space-sm) var(--space-md)",
-      borderBottom: "1px solid var(--border-primary)",
-      background: "var(--bg-tertiary)",
+      padding: "var(--sp-sm) var(--sp-md)",
+      borderBottom: "1px solid var(--hairline)",
+      background: "var(--chip-active-bg)",
     }}>
       <div style={{
-        fontSize: "10px", fontWeight: 600, color: "var(--text-tertiary)",
+        fontSize: "10px", fontWeight: 600, color: "var(--muted)",
         textTransform: "uppercase", letterSpacing: "0.5px",
         display: "flex", alignItems: "center", gap: "4px",
-        marginBottom: "var(--space-xs)",
+        marginBottom: "var(--sp-xs)",
       }}>
         📎 Context ({files.length})
       </div>
@@ -27,11 +27,11 @@ export function ContextAttachments({ files, onRemove }: {
             style={{
               display: "flex", alignItems: "center", gap: "4px",
               padding: "2px 8px",
-              borderRadius: "var(--radius-sm)",
-              background: file.active ? "var(--accent)" : "var(--bg-secondary)",
-              color: file.active ? "#fff" : "var(--text-secondary)",
+              borderRadius: "var(--r-sm)",
+              background: file.active ? "var(--primary-violet)" : "var(--canvas-panel)",
+              color: file.active ? "#fff" : "var(--body)",
               fontSize: "10px", fontFamily: "var(--font-mono)",
-              border: `1px solid ${file.active ? "var(--accent)" : "var(--border-primary)"}`,
+              border: `1px solid ${file.active ? "var(--primary-violet)" : "var(--hairline)"}`,
             }}
           >
             <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 120 }}>

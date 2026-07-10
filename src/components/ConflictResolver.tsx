@@ -162,7 +162,7 @@ export default function ConflictResolver({
           width: "90%",
           maxWidth: "900px",
           maxHeight: "80vh",
-          borderRadius: "var(--radius-lg)",
+          borderRadius: "var(--r-lg)",
           display: "flex",
           flexDirection: "column",
           overflow: "hidden",
@@ -172,8 +172,8 @@ export default function ConflictResolver({
         {/* Header */}
         <div
           style={{
-            padding: "var(--space-lg)",
-            borderBottom: "1px solid var(--border-primary)",
+            padding: "var(--sp-lg)",
+            borderBottom: "1px solid var(--hairline)",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
@@ -183,10 +183,10 @@ export default function ConflictResolver({
             <h2
               id="conflict-modal-title"
               style={{
-                fontSize: "var(--font-size-lg)",
+                fontSize: "15px",
                 fontWeight: 600,
-                color: "var(--text-primary)",
-                marginBottom: "var(--space-xs)",
+                color: "var(--ink)",
+                marginBottom: "var(--sp-xs)",
               }}
             >
               ⚡ Conflict Detected
@@ -194,8 +194,8 @@ export default function ConflictResolver({
             <p
               id="conflict-modal-desc"
               style={{
-                fontSize: "var(--font-size-sm)",
-                color: "var(--text-secondary)",
+                fontSize: "13px",
+                color: "var(--body)",
               }}
             >
               Multiple AI changes to <code>{filePath}</code> were detected.
@@ -217,10 +217,10 @@ export default function ConflictResolver({
           style={{
             flex: 1,
             overflow: "auto",
-            padding: "var(--space-lg)",
+            padding: "var(--sp-lg)",
             display: "flex",
             flexDirection: "column",
-            gap: "var(--space-lg)",
+            gap: "var(--sp-lg)",
           }}
         >
           {branches.map((branch, index) => (
@@ -230,34 +230,34 @@ export default function ConflictResolver({
                 selectedBranch === branch.id ? "selected" : ""
               }`}
               style={{
-                border: "1px solid var(--border-primary)",
-                borderRadius: "var(--radius-md)",
+                border: "1px solid var(--hairline)",
+                borderRadius: "var(--r-md)",
                 overflow: "hidden",
                 cursor: "pointer",
-                transition: "all var(--transition-fast)",
+                transition: "all 120ms ease",
                 background:
                   selectedBranch === branch.id
                     ? "hsla(217, 91%, 60%, 0.08)"
-                    : "var(--bg-tertiary)",
+                    : "var(--chip-active-bg)",
               }}
               onClick={() => setSelectedBranch(branch.id)}
             >
               {/* Branch Header */}
               <div
                 style={{
-                  padding: "var(--space-md)",
-                  borderBottom: "1px solid var(--border-primary)",
+                  padding: "var(--sp-md)",
+                  borderBottom: "1px solid var(--hairline)",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "space-between",
-                  background: "var(--bg-secondary)",
+                  background: "var(--canvas-panel)",
                 }}
               >
                 <div
                   style={{
                     display: "flex",
                     alignItems: "center",
-                    gap: "var(--space-sm)",
+                    gap: "var(--sp-sm)",
                   }}
                 >
                   <span
@@ -265,11 +265,11 @@ export default function ConflictResolver({
                       width: "24px",
                       height: "24px",
                       borderRadius: "50%",
-                      background: index === 0 ? "var(--accent-blue)" : "var(--accent-purple)",
+                      background: index === 0 ? "var(--primary-violet)" : "var(--primary-violet)",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      fontSize: "var(--font-size-xs)",
+                      fontSize: "12px",
                       fontWeight: 600,
                       color: "white",
                     }}
@@ -279,17 +279,17 @@ export default function ConflictResolver({
                   <div>
                     <div
                       style={{
-                        fontSize: "var(--font-size-sm)",
+                        fontSize: "13px",
                         fontWeight: 500,
-                        color: "var(--text-primary)",
+                        color: "var(--ink)",
                       }}
                     >
                       {branch.username}
                     </div>
                     <div
                       style={{
-                        fontSize: "var(--font-size-xs)",
-                        color: "var(--text-tertiary)",
+                        fontSize: "12px",
+                        color: "var(--muted)",
                       }}
                     >
                       {new Date(branch.timestamp).toLocaleTimeString()}
@@ -300,7 +300,7 @@ export default function ConflictResolver({
                 <div
                   style={{
                     display: "flex",
-                    gap: "var(--space-sm)",
+                    gap: "var(--sp-sm)",
                   }}
                 >
                   <button
@@ -331,7 +331,7 @@ export default function ConflictResolver({
               {/* Branch Content */}
               <div
                 style={{
-                  padding: "var(--space-md)",
+                  padding: "var(--sp-md)",
                   maxHeight: "200px",
                   overflow: "auto",
                 }}
@@ -339,9 +339,9 @@ export default function ConflictResolver({
                 <pre
                   style={{
                     fontFamily: "var(--font-mono)",
-                    fontSize: "var(--font-size-xs)",
+                    fontSize: "12px",
                     lineHeight: 1.6,
-                    color: "var(--text-secondary)",
+                    color: "var(--body)",
                     whiteSpace: "pre-wrap",
                     wordBreak: "break-all",
                     margin: 0,
@@ -355,12 +355,12 @@ export default function ConflictResolver({
               {Object.keys(branch.votes).length > 0 && (
                 <div
                   style={{
-                    padding: "var(--space-sm) var(--space-md)",
-                    borderTop: "1px solid var(--border-primary)",
+                    padding: "var(--sp-sm) var(--sp-md)",
+                    borderTop: "1px solid var(--hairline)",
                     display: "flex",
-                    gap: "var(--space-sm)",
-                    fontSize: "var(--font-size-xs)",
-                    color: "var(--text-tertiary)",
+                    gap: "var(--sp-sm)",
+                    fontSize: "12px",
+                    color: "var(--muted)",
                   }}
                 >
                   {Object.entries(branch.votes).map(([voterId, vote]) => (
@@ -382,11 +382,11 @@ export default function ConflictResolver({
         {/* Footer */}
         <div
           style={{
-            padding: "var(--space-lg)",
-            borderTop: "1px solid var(--border-primary)",
+            padding: "var(--sp-lg)",
+            borderTop: "1px solid var(--hairline)",
             display: "flex",
             justifyContent: "flex-end",
-            gap: "var(--space-sm)",
+            gap: "var(--sp-sm)",
           }}
         >
           <button

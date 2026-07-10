@@ -52,7 +52,7 @@ export function DeletePopover({ filename, anchorRect, onConfirm, onCancel }: Del
       <div className="delete-popover-text">
         Delete <code>{filename}</code>?
         <br />
-        <span style={{ fontSize: "11px", color: "var(--text-muted-soft)" }}>This can't be undone.</span>
+        <span style={{ fontSize: "11px", color: "var(--muted-soft)" }}>This can't be undone.</span>
       </div>
       <div className="delete-popover-actions">
         <button className="btn btn-danger btn-sm" onClick={onConfirm}>

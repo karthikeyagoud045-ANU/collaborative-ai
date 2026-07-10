@@ -26,15 +26,15 @@ export function VersionHistory({ versions, onRestore }: {
         onClick={() => setIsOpen(!isOpen)}
         style={{
           position: "fixed", bottom: 20, left: 20, zIndex: 50,
-          padding: "var(--space-sm) var(--space-md)",
-          borderRadius: "var(--radius-full)",
+          padding: "var(--sp-sm) var(--sp-md)",
+          borderRadius: "var(--r-pill)",
           background: "var(--glass-bg-strong)",
           backdropFilter: "blur(var(--blur-amount))",
           border: "1px solid var(--glass-border)",
           boxShadow: "var(--glass-shadow)",
-          fontSize: "var(--font-size-xs)",
+          fontSize: "12px",
           fontWeight: 600,
-          color: "var(--text-primary)",
+          color: "var(--ink)",
           cursor: "pointer",
           display: "flex", alignItems: "center", gap: "6px",
         }}
@@ -47,7 +47,7 @@ export function VersionHistory({ versions, onRestore }: {
         <div style={{
           position: "fixed", bottom: 70, left: 20, zIndex: 50,
           width: 340, maxHeight: 400,
-          borderRadius: "var(--radius-lg)",
+          borderRadius: "var(--r-lg)",
           background: "var(--glass-bg-strong)",
           backdropFilter: "blur(var(--blur-strong))",
           border: "1px solid var(--glass-border)",
@@ -56,44 +56,44 @@ export function VersionHistory({ versions, onRestore }: {
           display: "flex", flexDirection: "column",
         }}>
           <div style={{
-            padding: "var(--space-md)",
-            borderBottom: "1px solid var(--border-primary)",
+            padding: "var(--sp-md)",
+            borderBottom: "1px solid var(--hairline)",
             display: "flex", alignItems: "center", justifyContent: "space-between",
           }}>
-            <span style={{ fontSize: "var(--font-size-sm)", fontWeight: 600 }}>Version History</span>
+            <span style={{ fontSize: "13px", fontWeight: 600 }}>Version History</span>
             <button onClick={() => setIsOpen(false)} style={{
               background: "none", border: "none", cursor: "pointer",
-              color: "var(--text-tertiary)", fontSize: 16,
+              color: "var(--muted)", fontSize: 16,
             }}>✕</button>
           </div>
 
           {/* Timeline */}
-          <div style={{ flex: 1, overflow: "auto", padding: "var(--space-sm)" }}>
+          <div style={{ flex: 1, overflow: "auto", padding: "var(--sp-sm)" }}>
             {versions.map((version, idx) => (
               <button
                 key={version.id}
                 onClick={() => setSelectedIdx(idx)}
                 style={{
-                  display: "flex", alignItems: "flex-start", gap: "var(--space-sm)",
+                  display: "flex", alignItems: "flex-start", gap: "var(--sp-sm)",
                   width: "100%", textAlign: "left",
-                  padding: "var(--space-sm) var(--space-md)",
-                  borderRadius: "var(--radius-md)",
+                  padding: "var(--sp-sm) var(--sp-md)",
+                  borderRadius: "var(--r-md)",
                   border: "none",
-                  background: selectedIdx === idx ? "var(--accent)" : "transparent",
-                  color: selectedIdx === idx ? "#fff" : "var(--text-primary)",
+                  background: selectedIdx === idx ? "var(--primary-violet)" : "transparent",
+                  color: selectedIdx === idx ? "#fff" : "var(--ink)",
                   cursor: "pointer",
-                  transition: "all var(--transition-fast)",
+                  transition: "all 120ms ease",
                   marginBottom: 2,
                 }}
               >
                 <div style={{
                   width: 8, height: 8, borderRadius: "50%",
-                  background: selectedIdx === idx ? "#fff" : "var(--accent)",
+                  background: selectedIdx === idx ? "#fff" : "var(--primary-violet)",
                   marginTop: 6, flexShrink: 0,
                 }} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{
-                    fontSize: "var(--font-size-xs)",
+                    fontSize: "12px",
                     fontWeight: 600,
                     overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
                   }}>
@@ -113,8 +113,8 @@ export function VersionHistory({ versions, onRestore }: {
 
           {/* Restore Button */}
           <div style={{
-            padding: "var(--space-md)",
-            borderTop: "1px solid var(--border-primary)",
+            padding: "var(--sp-md)",
+            borderTop: "1px solid var(--hairline)",
           }}>
             <button
               onClick={() => {
@@ -123,12 +123,12 @@ export function VersionHistory({ versions, onRestore }: {
               }}
               style={{
                 width: "100%",
-                padding: "var(--space-sm)",
-                borderRadius: "var(--radius-md)",
+                padding: "var(--sp-sm)",
+                borderRadius: "var(--r-md)",
                 border: "none",
-                background: "var(--accent)",
+                background: "var(--primary-violet)",
                 color: "#fff",
-                fontSize: "var(--font-size-sm)",
+                fontSize: "13px",
                 fontWeight: 600,
                 cursor: "pointer",
               }}

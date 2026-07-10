@@ -74,19 +74,19 @@ export default function TemplatesPage() {
   ];
 
   return (
-    <div style={{ minHeight: "100vh", background: "var(--bg-primary)", padding: "var(--space-2xl)" }}>
+    <div style={{ minHeight: "100vh", background: "var(--canvas)", padding: "var(--sp-xl)" }}>
       <div style={{ maxWidth: 1200, margin: "0 auto" }}>
-        <Link href="/" style={{ fontSize: "var(--font-size-sm)", color: "var(--text-secondary)", marginBottom: "var(--space-lg)", display: "inline-block" }}>
+        <Link href="/" style={{ fontSize: "13px", color: "var(--body)", marginBottom: "var(--sp-lg)", display: "inline-block" }}>
           ← Back to IDE
         </Link>
-        <h1 style={{ fontSize: "var(--font-size-2xl)", fontWeight: 700, marginBottom: "var(--space-sm)", letterSpacing: "-0.02em" }}>
+        <h1 style={{ fontSize: "20px", fontWeight: 700, marginBottom: "var(--sp-sm)", letterSpacing: "-0.02em" }}>
           Community Templates
         </h1>
-        <p style={{ color: "var(--text-secondary)", fontSize: "var(--font-size-base)", marginBottom: "var(--space-2xl)" }}>
+        <p style={{ color: "var(--body)", fontSize: "15px", marginBottom: "var(--sp-xl)" }}>
           Fork community-built projects and start vibe coding instantly
         </p>
 
-        <div style={{ display: "flex", gap: "var(--space-md)", marginBottom: "var(--space-2xl)" }}>
+        <div style={{ display: "flex", gap: "var(--sp-md)", marginBottom: "var(--sp-xl)" }}>
           <input
             type="text"
             placeholder="Search templates..."
@@ -106,9 +106,9 @@ export default function TemplatesPage() {
         </div>
 
         {isLoading ? (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: "var(--space-lg)" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: "var(--sp-lg)" }}>
             {[...Array(6)].map((_, i) => (
-              <div key={i} className="skeleton" style={{ height: 180, borderRadius: "var(--radius-lg)" }} />
+              <div key={i} className="skeleton" style={{ height: 180, borderRadius: "var(--r-lg)" }} />
             ))}
           </div>
         ) : templates.length === 0 ? (
@@ -116,24 +116,24 @@ export default function TemplatesPage() {
             <div className="empty-state-icon">📦</div>
             <h2>No templates yet</h2>
             <p>Be the first to publish a template!</p>
-            <Link href="/" className="btn btn-primary" style={{ marginTop: "var(--space-lg)" }}>
+            <Link href="/" className="btn btn-primary" style={{ marginTop: "var(--sp-lg)" }}>
               Start Coding
             </Link>
           </div>
         ) : (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: "var(--space-lg)" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: "var(--sp-lg)" }}>
             {templates.map((template) => (
-              <div key={template.id} className="card" style={{ display: "flex", flexDirection: "column", gap: "var(--space-md)" }}>
+              <div key={template.id} className="card" style={{ display: "flex", flexDirection: "column", gap: "var(--sp-md)" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <span className="badge badge-blue">{template.language}</span>
-                  <span style={{ fontSize: "var(--font-size-sm)", color: "var(--text-tertiary)" }}>🍴 {template.fork_count}</span>
+                  <span style={{ fontSize: "13px", color: "var(--muted)" }}>🍴 {template.fork_count}</span>
                 </div>
-                <h3 style={{ fontSize: "var(--font-size-base)", fontWeight: 600 }}>{template.title}</h3>
-                <p style={{ fontSize: "var(--font-size-sm)", color: "var(--text-secondary)", lineHeight: 1.5, flex: 1 }}>
+                <h3 style={{ fontSize: "15px", fontWeight: 600 }}>{template.title}</h3>
+                <p style={{ fontSize: "13px", color: "var(--body)", lineHeight: 1.5, flex: 1 }}>
                   {template.description || "No description"}
                 </p>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: "var(--space-md)", borderTop: "1px solid var(--border-primary)" }}>
-                  <span style={{ fontSize: "var(--font-size-xs)", color: "var(--text-tertiary)" }}>by {template.author_name}</span>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: "var(--sp-md)", borderTop: "1px solid var(--hairline)" }}>
+                  <span style={{ fontSize: "12px", color: "var(--muted)" }}>by {template.author_name}</span>
                   <button className="btn btn-primary btn-sm" onClick={() => handleFork(template.id)}>
                     Fork & Start
                   </button>

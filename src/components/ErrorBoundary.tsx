@@ -38,7 +38,7 @@ export class ErrorBoundary extends Component<Props, State> {
             </div>
             <button
               className="btn btn-secondary"
-              style={{ marginTop: "var(--space-lg)" }}
+              style={{ marginTop: "var(--sp-lg)" }}
               onClick={() => this.setState({ hasError: false, error: null })}
             >
               Try Again
